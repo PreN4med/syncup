@@ -80,12 +80,20 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-2xl font-semibold">Your Groups</h3>
-            <Link
-              href="/groups/create"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
-            >
-              + Create Group
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/groups/join"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition"
+              >
+                Join Group
+              </Link>
+              <Link
+                href="/groups/create"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+              >
+                + Create Group
+              </Link>
+            </div>
           </div>
 
           {/* Display groups or empty state */}
@@ -114,7 +122,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <p className="text-gray-500 text-center py-8">
-              No groups yet. Create one to get started!
+              No groups yet. Create one to get started.
             </p>
           )}
         </div>
