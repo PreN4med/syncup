@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import WeeklyCalendar from "@/components/WeeklyCalendar";
+import UnifiedGroupCalendar from "@/components/UnifiedGroupCalendar";
 
 // Define member type with profile
 type GroupMember = {
@@ -134,13 +134,18 @@ export default async function GroupPage({
           </div>
         </div>
 
-        {/* Calendar section */}
+        {/* Unified Calendar - replaces both individual and comparison views */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-semibold mb-4">Your Schedule</h2>
+          <h2 className="text-2xl font-semibold mb-4">Group Schedule</h2>
           <p className="text-gray-600 mb-4">
-            Click and drag on the calendar to mark when you&apos;re available.
+            Toggle members to see their schedules and find overlapping
+            availability.
           </p>
-          <WeeklyCalendar groupId={id} userId={user.id} />
+          <UnifiedGroupCalendar
+            groupId={id}
+            currentUserId={user.id}
+            members={members}
+          />
         </div>
       </div>
     </div>
