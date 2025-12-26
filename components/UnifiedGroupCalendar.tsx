@@ -63,6 +63,10 @@ export default function UnifiedGroupCalendar({
     new Set([currentUserId])
   );
 
+  // Overlap filter states
+  const [showOnlyOverlapFree, setShowOnlyOverlapFree] = useState(false);
+  const [showOnlyOverlapBusy, setShowOnlyOverlapBusy] = useState(false);
+
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartCell, setDragStartCell] = useState<{
@@ -206,6 +210,42 @@ export default function UnifiedGroupCalendar({
     });
 
     return availableMembers.size;
+  };
+
+  /**
+   * Check if a time slot should be visible based on overlap filters
+   * Returns true only if the specific hour meets the overlap criteria
+   */
+  const shouldShowTimeSlot = (day: string, hour: number) => {
+    if (!showOnlyOverlapFree && !showOnlyOverlapBusy) return true;
+
+    const visibleBlocks = getVisibleBlocks();
+
+    if (showOnlyOverlapFree) {
+      // Count how many members are available at THIS specific hour
+      const availableAtThisHour = visibleBlocks.filter(
+        (block) =>
+          block.day === day &&
+          block.status === "available" &&
+          hour >= block.startHour &&
+          hour < block.endHour
+      );
+      return availableAtThisHour.length >= 2;
+    }
+
+    if (showOnlyOverlapBusy) {
+      // Count how many members are busy at THIS specific hour
+      const busyAtThisHour = visibleBlocks.filter(
+        (block) =>
+          block.day === day &&
+          block.status === "busy" &&
+          hour >= block.startHour &&
+          hour < block.endHour
+      );
+      return busyAtThisHour.length >= 2;
+    }
+
+    return false;
   };
 
   /**
@@ -380,34 +420,106 @@ export default function UnifiedGroupCalendar({
         </div>
 
         {/* Member toggles */}
-        <div className="flex flex-wrap gap-2">
+        <div className="mb-3">
           <span className="text-sm font-medium text-gray-700 mr-2">
             Show schedules:
           </span>
-          {members.map((member) => (
-            <button
-              key={member.user_id}
-              onClick={() => toggleMember(member.user_id)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                visibleMembers.has(member.user_id)
-                  ? member.user_id === currentUserId
-                    ? "bg-green-500 text-white"
-                    : "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {getMemberName(member.user_id)}
-              {visibleMembers.has(member.user_id) && " ✓"}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {members.map((member) => (
+              <button
+                key={member.user_id}
+                onClick={() => toggleMember(member.user_id)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                  visibleMembers.has(member.user_id)
+                    ? member.user_id === currentUserId
+                      ? "bg-green-500 text-white"
+                      : "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {getMemberName(member.user_id)}
+                {visibleMembers.has(member.user_id)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Overlap indicator */}
+        {/* Overlap filter toggles */}
         {visibleMembers.size > 1 && (
-          <div className="mt-3 p-2 bg-purple-100 rounded-lg">
-            <p className="text-sm text-purple-800">
-              <strong>Showing overlaps:</strong> Darker areas = more people
-              available
+          <div className="border-t border-blue-200 pt-3">
+            <span className="text-sm font-medium text-gray-700 mr-2">
+              Filter by overlaps:
+            </span>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <button
+                onClick={() => {
+                  setShowOnlyOverlapFree(!showOnlyOverlapFree);
+                  if (!showOnlyOverlapFree) setShowOnlyOverlapBusy(false);
+                }}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                  showOnlyOverlapFree
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {showOnlyOverlapFree}Show Only Overlapping Free Times
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowOnlyOverlapBusy(!showOnlyOverlapBusy);
+                  if (!showOnlyOverlapBusy) setShowOnlyOverlapFree(false);
+                }}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                  showOnlyOverlapBusy
+                    ? "bg-red-600 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {showOnlyOverlapBusy}Show Only Overlapping Busy Times
+              </button>
+
+              {(showOnlyOverlapFree || showOnlyOverlapBusy) && (
+                <button
+                  onClick={() => {
+                    setShowOnlyOverlapFree(false);
+                    setShowOnlyOverlapBusy(false);
+                  }}
+                  className="px-3 py-1 rounded-lg text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 transition"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Overlap indicator */}
+        {visibleMembers.size > 1 &&
+          !showOnlyOverlapFree &&
+          !showOnlyOverlapBusy && (
+            <div className="mt-3 p-2 bg-purple-100 rounded-lg">
+              <p className="text-sm text-purple-800">
+                <strong>Showing overlaps:</strong> Darker areas = more people
+                available
+              </p>
+            </div>
+          )}
+
+        {showOnlyOverlapFree && (
+          <div className="mt-3 p-2 bg-green-100 rounded-lg">
+            <p className="text-sm text-green-800">
+              <strong>Filtering:</strong> Only showing times when 2+ members are
+              free
+            </p>
+          </div>
+        )}
+
+        {showOnlyOverlapBusy && (
+          <div className="mt-3 p-2 bg-red-100 rounded-lg">
+            <p className="text-sm text-red-800">
+              <strong>Filtering:</strong> Only showing times when 2+ members are
+              busy
             </p>
           </div>
         )}
@@ -458,6 +570,7 @@ export default function UnifiedGroupCalendar({
                   const inDragSelection = isInDragSelection(day, hour);
                   const overlapCount = countOverlappingMembers(day, hour);
                   const visibleCount = visibleMembers.size;
+                  const shouldShow = shouldShowTimeSlot(day, hour);
 
                   // Background color for overlap indication
                   let bgColor = "";
@@ -466,6 +579,14 @@ export default function UnifiedGroupCalendar({
                     if (overlapCount === visibleCount) bgColor = "bg-green-100";
                     else if (intensity >= 0.5) bgColor = "bg-yellow-50";
                     else bgColor = "bg-orange-50";
+                  }
+
+                  // Dim cells that don't match filter
+                  if (
+                    !shouldShow &&
+                    (showOnlyOverlapFree || showOnlyOverlapBusy)
+                  ) {
+                    bgColor = "bg-gray-100 opacity-30";
                   }
 
                   return (
@@ -479,36 +600,100 @@ export default function UnifiedGroupCalendar({
                           : bgColor || "hover:bg-blue-50"
                       }`}
                     >
+                      {/* Only show blocks if cell passes filter */}
                       {getVisibleBlocks()
-                        .filter(
-                          (block) =>
-                            block.day === day && block.startHour === hour
-                        )
-                        .map((block) => {
+                        .filter((block) => {
+                          // Check if this block exists at this hour
+                          if (
+                            !(
+                              block.day === day &&
+                              block.startHour <= hour &&
+                              block.endHour > hour
+                            )
+                          ) {
+                            return false;
+                          }
+
+                          // If no filter is active, show all blocks
+                          if (!showOnlyOverlapFree && !showOnlyOverlapBusy) {
+                            return true;
+                          }
+
+                          // Only show if this specific hour passes the filter
+                          return shouldShow;
+                        })
+                        .map((block, index) => {
+                          // Only render the block starting at this hour
+                          if (block.startHour !== hour) return null;
+
+                          // Calculate visible height based on filter
+                          let visibleStartHour = block.startHour;
+                          let visibleEndHour = block.endHour;
+
+                          // When filtering, find the actual overlapping range
+                          if (showOnlyOverlapFree || showOnlyOverlapBusy) {
+                            // Find first hour where overlap exists
+                            for (
+                              let h = block.startHour;
+                              h < block.endHour;
+                              h++
+                            ) {
+                              if (shouldShowTimeSlot(day, h)) {
+                                visibleStartHour = h;
+                                break;
+                              }
+                            }
+
+                            // Find last hour where overlap exists
+                            for (
+                              let h = block.endHour - 1;
+                              h >= block.startHour;
+                              h--
+                            ) {
+                              if (shouldShowTimeSlot(day, h)) {
+                                visibleEndHour = h + 1;
+                                break;
+                              }
+                            }
+
+                            // Don't render if no overlap found
+                            if (visibleStartHour >= visibleEndHour) return null;
+                          }
+
                           const blockHeight =
-                            (block.endHour - block.startHour) * 64;
+                            (visibleEndHour - visibleStartHour) * 64;
+                          const offsetTop = (visibleStartHour - hour) * 64;
                           const isMyBlock = block.userId === currentUserId;
 
                           return (
                             <div
-                              key={block.id}
+                              key={`${block.id}-${index}`}
                               onClick={(e) => {
-                                if (isMyBlock) {
+                                if (
+                                  isMyBlock &&
+                                  !showOnlyOverlapFree &&
+                                  !showOnlyOverlapBusy
+                                ) {
                                   e.stopPropagation();
                                   setBlocks(
                                     blocks.filter((b) => b.id !== block.id)
                                   );
                                 }
                               }}
-                              className={`absolute left-0 right-0 top-0 ${getUserColor(
+                              className={`absolute left-0 right-0 ${getUserColor(
                                 block.userId,
                                 block.status
                               )} border-2 flex items-center justify-center z-10 ${
-                                isMyBlock
+                                isMyBlock &&
+                                !showOnlyOverlapFree &&
+                                !showOnlyOverlapBusy
                                   ? "cursor-pointer hover:opacity-80"
                                   : "cursor-default opacity-70"
                               } transition`}
-                              style={{ height: `${blockHeight}px` }}
+                              style={{
+                                height: `${blockHeight}px`,
+                                top: `${offsetTop}px`,
+                              }}
                               title={`${getMemberName(block.userId)} - ${
                                 block.status === "available" ? "Free" : "Busy"
                               }`}
@@ -518,18 +703,15 @@ export default function UnifiedGroupCalendar({
                                   ? block.status === "available"
                                     ? "Free"
                                     : "Busy"
+                                  : showOnlyOverlapFree || showOnlyOverlapBusy
+                                  ? block.status === "available"
+                                    ? "Overlap Free"
+                                    : "Overlap Busy"
                                   : getMemberName(block.userId).split(" ")[0]}
                               </span>
                             </div>
                           );
                         })}
-
-                      {/* Show overlap count */}
-                      {visibleCount > 1 && overlapCount > 1 && (
-                        <div className="absolute top-1 right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold z-20">
-                          {overlapCount}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
