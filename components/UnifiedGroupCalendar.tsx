@@ -286,7 +286,7 @@ export default function UnifiedGroupCalendar({
       if (resizeEdge === "bottom") {
         // Dragging bottom edge - change endHour
         // Allow dragging to any hour, but minimum 1 hour block
-        const newEndHour = Math.max(hour + 1, b.startHour + 1);
+        const newEndHour = Math.max(hour, b.startHour + 1);
         // Prevent excessive updates if hour hasn't changed
         if (newEndHour === b.endHour) return b;
         return { ...b, endHour: newEndHour };
