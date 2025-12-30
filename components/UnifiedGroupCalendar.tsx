@@ -171,6 +171,9 @@ export default function UnifiedGroupCalendar({
     };
 
     const onMouseUp = () => {
+      // Merge blocks after resize ends
+      setBlocks((prev) => mergeOverlappingBlocks(prev));
+
       setIsResizing(false);
       setResizingBlockId(null);
       setResizeEdge(null);
@@ -427,7 +430,12 @@ export default function UnifiedGroupCalendar({
         userId: currentUserId,
       };
 
-      setBlocks([...filteredBlocks, newBlock]);
+      // Merge overlapping blocks
+      const mergedBlocks = mergeOverlappingBlocks([
+        ...filteredBlocks,
+        newBlock,
+      ]);
+      setBlocks(mergedBlocks);
       setNextId(nextId + 1);
     } else {
       setBlocks(
@@ -447,6 +455,47 @@ export default function UnifiedGroupCalendar({
     setIsDragging(false);
     setDragStartCell(null);
     setDragCurrentCell(null);
+  };
+
+  /**
+   * Merge overlapping blocks of the same status
+   */
+  const mergeOverlappingBlocks = (
+    blocks: AvailabilityBlock[]
+  ): AvailabilityBlock[] => {
+    const merged: AvailabilityBlock[] = [];
+
+    // Group blocks by day and status
+    const groupedByDay = blocks.reduce((acc, block) => {
+      const key = `${block.day}-${block.status}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(block);
+      return acc;
+    }, {} as Record<string, AvailabilityBlock[]>);
+
+    // For each day+status combination, merge overlapping blocks
+    Object.values(groupedByDay).forEach((dayBlocks) => {
+      const sorted = [...dayBlocks].sort((a, b) => a.startHour - b.startHour);
+
+      let current = sorted[0];
+
+      for (let i = 1; i < sorted.length; i++) {
+        const next = sorted[i];
+
+        if (next.startHour <= current.endHour) {
+          current = {
+            ...current,
+            endHour: Math.max(current.endHour, next.endHour),
+          };
+        } else {
+          merged.push(current);
+          current = next;
+        }
+      }
+      merged.push(current);
+    });
+
+    return merged;
   };
 
   const getMemberName = (userId: string) => {
