@@ -155,19 +155,42 @@ export default function UnifiedGroupCalendar({
     const onMouseMove = (e: MouseEvent) => {
       const hour = getHourFromMouseY(e.clientY);
 
-      setBlocks((prev) =>
-        prev.map((b) => {
+      setBlocks((prev) => {
+        const currentBlock = prev.find((b) => b.id === resizingBlockId);
+        if (!currentBlock) return prev;
+
+        return prev.map((b) => {
           if (b.id !== resizingBlockId || b.day !== resizeDay) return b;
 
+          let newStartHour = b.startHour;
+          let newEndHour = b.endHour;
+
           if (resizeEdge === "bottom") {
-            const newEndHour = Math.max(hour + 1, b.startHour + 1);
-            return { ...b, endHour: newEndHour };
+            newEndHour = Math.max(hour + 1, b.startHour + 1);
           } else {
-            const newStartHour = Math.min(hour, b.endHour - 1);
-            return { ...b, startHour: newStartHour };
+            newStartHour = Math.min(hour, b.endHour - 1);
           }
-        })
-      );
+
+          // Check if resize would conflict with a block of different status
+          const hasConflict = prev.some((other) => {
+            if (other.id === b.id) return false;
+            if (other.day !== b.day) return false;
+            if (other.status === b.status) return false;
+
+            // Check if would overlap with different status block
+            return (
+              (newStartHour >= other.startHour &&
+                newStartHour < other.endHour) ||
+              (newEndHour > other.startHour && newEndHour <= other.endHour) ||
+              (newStartHour <= other.startHour && newEndHour >= other.endHour)
+            );
+          });
+
+          if (hasConflict) return b;
+
+          return { ...b, startHour: newStartHour, endHour: newEndHour };
+        });
+      });
     };
 
     const onMouseUp = () => {
@@ -397,7 +420,6 @@ export default function UnifiedGroupCalendar({
   };
 
   const handleMouseEnter = (day: string, hour: number) => {
-    // Only handle drag creation, NOT resize
     if (isDragging && dragStartCell && day === dragStartCell.day) {
       setDragCurrentCell({ day, hour });
     }
@@ -410,8 +432,28 @@ export default function UnifiedGroupCalendar({
     const maxHour = Math.max(dragStartCell.hour, dragCurrentCell.hour);
 
     if (dragMode === "add") {
+      const hasConflict = blocks.some((block) => {
+        if (block.day !== dragStartCell.day) return false;
+        if (block.status === blockType) return false;
+
+        const hasOverlap =
+          (block.startHour >= minHour && block.startHour < maxHour + 1) ||
+          (block.endHour > minHour && block.endHour <= maxHour + 1) ||
+          (block.startHour <= minHour && block.endHour >= maxHour + 1);
+
+        return hasOverlap;
+      });
+
+      if (hasConflict) {
+        setIsDragging(false);
+        setDragStartCell(null);
+        setDragCurrentCell(null);
+        return;
+      }
+
       const filteredBlocks = blocks.filter((block) => {
         if (block.day !== dragStartCell.day) return true;
+        if (block.status !== blockType) return true;
 
         const hasOverlap =
           (block.startHour >= minHour && block.startHour < maxHour + 1) ||
@@ -566,7 +608,7 @@ export default function UnifiedGroupCalendar({
                 }`}
               >
                 {getMemberName(member.user_id)}
-                {visibleMembers.has(member.user_id) && " ✓"}
+                {visibleMembers.has(member.user_id)}
               </button>
             ))}
           </div>
@@ -590,7 +632,7 @@ export default function UnifiedGroupCalendar({
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {showOnlyOverlapFree && "✓ "}Show Only Overlapping Free Times
+                {showOnlyOverlapFree}Show Only Overlapping Free Times
               </button>
 
               <button
@@ -604,7 +646,7 @@ export default function UnifiedGroupCalendar({
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {showOnlyOverlapBusy && "✓ "}Show Only Overlapping Busy Times
+                {showOnlyOverlapBusy}Show Only Overlapping Busy Times
               </button>
 
               {(showOnlyOverlapFree || showOnlyOverlapBusy) && (
