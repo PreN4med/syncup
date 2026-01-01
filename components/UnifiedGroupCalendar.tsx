@@ -26,10 +26,6 @@ type UnifiedGroupCalendarProps = {
   members: Member[];
 };
 
-/**
- * UnifiedGroupCalendar - Single calendar showing personal schedule and group overlaps
- * Toggle members to show/hide their availability
- */
 export default function UnifiedGroupCalendar({
   groupId,
   currentUserId,
@@ -59,6 +55,18 @@ export default function UnifiedGroupCalendar({
   const [saveMessage, setSaveMessage] = useState("");
   const [blockType, setBlockType] = useState<"available" | "busy">("available");
 
+  // Time input state
+  const [showTimeInput, setShowTimeInput] = useState(false);
+  const [timeInput, setTimeInput] = useState({
+    day: "",
+    startHour: "",
+    startMinute: "",
+    startPeriod: "AM" as "AM" | "PM",
+    endHour: "",
+    endMinute: "",
+    endPeriod: "AM" as "AM" | "PM",
+  });
+
   // Toggle members
   const [visibleMembers, setVisibleMembers] = useState<Set<string>>(
     new Set([currentUserId])
@@ -80,7 +88,7 @@ export default function UnifiedGroupCalendar({
   } | null>(null);
   const [dragMode, setDragMode] = useState<"add" | "remove">("add");
 
-  // Resize state, uses window events now
+  // Resize state
   const [isResizing, setIsResizing] = useState(false);
   const [resizingBlockId, setResizingBlockId] = useState<string | null>(null);
   const [resizeEdge, setResizeEdge] = useState<"top" | "bottom" | null>(null);
@@ -90,6 +98,119 @@ export default function UnifiedGroupCalendar({
   const dayToIndex = (day: string) => days.indexOf(day);
 
   /**
+   * Convert 12-hour time to 24-hour decimal format
+   */
+  const convertTo24Hour = (
+    hour: string,
+    minute: string,
+    period: "AM" | "PM"
+  ): number => {
+    let h = parseInt(hour);
+    const m = parseInt(minute);
+
+    if (isNaN(h) || isNaN(m)) return 0;
+
+    if (period === "PM" && h !== 12) h += 12;
+    if (period === "AM" && h === 12) h = 0;
+
+    return h + m / 60;
+  };
+
+  /**
+   * Add block from time input
+   */
+  const handleAddTimeBlock = () => {
+    if (
+      !timeInput.day ||
+      !timeInput.startHour ||
+      !timeInput.startMinute ||
+      !timeInput.endHour ||
+      !timeInput.endMinute
+    ) {
+      alert("Please fill in all time fields");
+      return;
+    }
+
+    const startHour = convertTo24Hour(
+      timeInput.startHour,
+      timeInput.startMinute,
+      timeInput.startPeriod
+    );
+    const endHour = convertTo24Hour(
+      timeInput.endHour,
+      timeInput.endMinute,
+      timeInput.endPeriod
+    );
+
+    if (endHour <= startHour) {
+      alert("End time must be after start time");
+      return;
+    }
+
+    if (startHour < 8 || endHour > 22) {
+      alert("Time must be between 8:00 AM and 10:00 PM");
+      return;
+    }
+
+    // Check for conflicts with different status blocks
+    const hasConflict = blocks.some((block) => {
+      if (block.day !== timeInput.day) return false;
+      if (block.status === blockType) return false;
+
+      const hasOverlap =
+        (startHour >= block.startHour && startHour < block.endHour) ||
+        (endHour > block.startHour && endHour <= block.endHour) ||
+        (startHour <= block.startHour && endHour >= block.endHour);
+
+      return hasOverlap;
+    });
+
+    if (hasConflict) {
+      alert("This time conflicts with an existing block of different status");
+      return;
+    }
+
+    // Remove overlapping blocks of same status
+    const filteredBlocks = blocks.filter((block) => {
+      if (block.day !== timeInput.day) return true;
+      if (block.status !== blockType) return true;
+
+      const hasOverlap =
+        (startHour >= block.startHour && startHour < block.endHour) ||
+        (endHour > block.startHour && endHour <= block.endHour) ||
+        (startHour <= block.startHour && endHour >= block.endHour);
+
+      return !hasOverlap;
+    });
+
+    const newBlock: AvailabilityBlock = {
+      id: `${timeInput.day}-${startHour}-${nextId}`,
+      day: timeInput.day,
+      startHour,
+      endHour,
+      status: blockType,
+      userId: currentUserId,
+    };
+
+    // Merge overlapping blocks
+    const mergedBlocks = mergeOverlappingBlocks([...filteredBlocks, newBlock]);
+    setBlocks(mergedBlocks);
+    setNextId(nextId + 1);
+
+    // Reset form
+    setTimeInput({
+      day: "",
+      startHour: "",
+      startMinute: "",
+      startPeriod: "AM",
+      endHour: "",
+      endMinute: "",
+      endPeriod: "AM",
+    });
+    setShowTimeInput(false);
+  };
+
+  /**
    * Get hour from mouse Y position
    */
   const getHourFromMouseY = (clientY: number) => {
@@ -97,8 +218,8 @@ export default function UnifiedGroupCalendar({
     const rect = calendarRef.current.getBoundingClientRect();
     const y = clientY - rect.top;
     const hourHeight = 64;
-    const index = Math.floor(y / hourHeight);
-    return Math.min(Math.max(8 + index, 8), 21);
+    const decimalHour = y / hourHeight;
+    return Math.max(8, Math.min(22, 8 + decimalHour));
   };
 
   /**
@@ -119,13 +240,15 @@ export default function UnifiedGroupCalendar({
       if (data && data.length > 0) {
         const loadedBlocks: AvailabilityBlock[] = data.map((record, index) => {
           const startHour = parseInt(record.start_time.split(":")[0]);
+          const startMinute = parseInt(record.start_time.split(":")[1]);
           const endHour = parseInt(record.end_time.split(":")[0]);
+          const endMinute = parseInt(record.end_time.split(":")[1]);
 
           return {
             id: `loaded-${record.id}-${index}`,
             day: indexToDay(record.day_of_week),
-            startHour,
-            endHour,
+            startHour: startHour + startMinute / 60,
+            endHour: endHour + endMinute / 60,
             status: record.status as "available" | "busy",
             userId: record.user_id,
           };
@@ -143,11 +266,10 @@ export default function UnifiedGroupCalendar({
     };
 
     loadAllAvailability();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, currentUserId]);
 
   /**
-   * Resize blocks, uses window mouse events to avoid feedback loop
+   * Resize blocks
    */
   useEffect(() => {
     if (!isResizing || !resizingBlockId || !resizeEdge || !resizeDay) return;
@@ -156,9 +278,6 @@ export default function UnifiedGroupCalendar({
       const hour = getHourFromMouseY(e.clientY);
 
       setBlocks((prev) => {
-        const currentBlock = prev.find((b) => b.id === resizingBlockId);
-        if (!currentBlock) return prev;
-
         return prev.map((b) => {
           if (b.id !== resizingBlockId || b.day !== resizeDay) return b;
 
@@ -166,9 +285,9 @@ export default function UnifiedGroupCalendar({
           let newEndHour = b.endHour;
 
           if (resizeEdge === "bottom") {
-            newEndHour = Math.max(hour + 1, b.startHour + 1);
+            newEndHour = Math.max(hour, b.startHour + 0.25);
           } else {
-            newStartHour = Math.min(hour, b.endHour - 1);
+            newStartHour = Math.min(hour, b.endHour - 0.25);
           }
 
           // Check if resize would conflict with a block of different status
@@ -177,7 +296,6 @@ export default function UnifiedGroupCalendar({
             if (other.day !== b.day) return false;
             if (other.status === b.status) return false;
 
-            // Check if would overlap with different status block
             return (
               (newStartHour >= other.startHour &&
                 newStartHour < other.endHour) ||
@@ -194,9 +312,7 @@ export default function UnifiedGroupCalendar({
     };
 
     const onMouseUp = () => {
-      // Merge blocks after resize ends
       setBlocks((prev) => mergeOverlappingBlocks(prev));
-
       setIsResizing(false);
       setResizingBlockId(null);
       setResizeEdge(null);
@@ -212,9 +328,6 @@ export default function UnifiedGroupCalendar({
     };
   }, [isResizing, resizingBlockId, resizeEdge, resizeDay]);
 
-  /**
-   * Start resize - captures block and edge info
-   */
   const startResize = (
     e: React.MouseEvent,
     blockId: string,
@@ -229,9 +342,6 @@ export default function UnifiedGroupCalendar({
     setResizeDay(day);
   };
 
-  /**
-   * Toggle member visibility
-   */
   const toggleMember = (userId: string) => {
     const newVisible = new Set(visibleMembers);
     if (newVisible.has(userId)) {
@@ -242,9 +352,6 @@ export default function UnifiedGroupCalendar({
     setVisibleMembers(newVisible);
   };
 
-  /**
-   * Get color for a specific user
-   */
   const getUserColor = (userId: string, status: "available" | "busy") => {
     if (userId === currentUserId) {
       return status === "available"
@@ -280,9 +387,6 @@ export default function UnifiedGroupCalendar({
     return status === "available" ? colorScheme.available : colorScheme.busy;
   };
 
-  /**
-   * Get all visible blocks
-   */
   const getVisibleBlocks = () => {
     const myVisibleBlocks = visibleMembers.has(currentUserId) ? blocks : [];
     const otherVisibleBlocks = allMemberBlocks.filter((b) =>
@@ -291,9 +395,6 @@ export default function UnifiedGroupCalendar({
     return [...myVisibleBlocks, ...otherVisibleBlocks];
   };
 
-  /**
-   * Count overlapping members at a time slot
-   */
   const countOverlappingMembers = (day: string, hour: number) => {
     const visibleBlocks = getVisibleBlocks();
     const availableMembers = new Set<string>();
@@ -312,9 +413,6 @@ export default function UnifiedGroupCalendar({
     return availableMembers.size;
   };
 
-  /**
-   * Check if a time slot should be visible based on overlap filters
-   */
   const shouldShowTimeSlot = (day: string, hour: number) => {
     if (!showOnlyOverlapFree && !showOnlyOverlapBusy) return true;
 
@@ -345,9 +443,6 @@ export default function UnifiedGroupCalendar({
     return false;
   };
 
-  /**
-   * Save current user's schedule
-   */
   const handleSave = async () => {
     setSaving(true);
     setSaveMessage("");
@@ -361,14 +456,25 @@ export default function UnifiedGroupCalendar({
 
       if (deleteError) throw deleteError;
 
-      const availabilityRecords = blocks.map((block) => ({
-        user_id: currentUserId,
-        group_id: groupId,
-        day_of_week: dayToIndex(block.day),
-        start_time: `${block.startHour.toString().padStart(2, "0")}:00:00`,
-        end_time: `${block.endHour.toString().padStart(2, "0")}:00:00`,
-        status: block.status,
-      }));
+      const availabilityRecords = blocks.map((block) => {
+        const startHourInt = Math.floor(block.startHour);
+        const startMinute = Math.round((block.startHour - startHourInt) * 60);
+        const endHourInt = Math.floor(block.endHour);
+        const endMinute = Math.round((block.endHour - endHourInt) * 60);
+
+        return {
+          user_id: currentUserId,
+          group_id: groupId,
+          day_of_week: dayToIndex(block.day),
+          start_time: `${startHourInt.toString().padStart(2, "0")}:${startMinute
+            .toString()
+            .padStart(2, "0")}:00`,
+          end_time: `${endHourInt.toString().padStart(2, "0")}:${endMinute
+            .toString()
+            .padStart(2, "0")}:00`,
+          status: block.status,
+        };
+      });
 
       if (availabilityRecords.length > 0) {
         const { error: insertError } = await supabase
@@ -472,7 +578,6 @@ export default function UnifiedGroupCalendar({
         userId: currentUserId,
       };
 
-      // Merge overlapping blocks
       const mergedBlocks = mergeOverlappingBlocks([
         ...filteredBlocks,
         newBlock,
@@ -499,15 +604,11 @@ export default function UnifiedGroupCalendar({
     setDragCurrentCell(null);
   };
 
-  /**
-   * Merge overlapping blocks of the same status
-   */
   const mergeOverlappingBlocks = (
     blocks: AvailabilityBlock[]
   ): AvailabilityBlock[] => {
     const merged: AvailabilityBlock[] = [];
 
-    // Group blocks by day and status
     const groupedByDay = blocks.reduce((acc, block) => {
       const key = `${block.day}-${block.status}`;
       if (!acc[key]) acc[key] = [];
@@ -515,15 +616,12 @@ export default function UnifiedGroupCalendar({
       return acc;
     }, {} as Record<string, AvailabilityBlock[]>);
 
-    // For each day+status combination, merge overlapping blocks
     Object.values(groupedByDay).forEach((dayBlocks) => {
       const sorted = [...dayBlocks].sort((a, b) => a.startHour - b.startHour);
-
       let current = sorted[0];
 
       for (let i = 1; i < sorted.length; i++) {
         const next = sorted[i];
-
         if (next.startHour <= current.endHour) {
           current = {
             ...current,
@@ -548,7 +646,6 @@ export default function UnifiedGroupCalendar({
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      {/* Controls */}
       <div className="p-4 bg-blue-50 border-b border-blue-200">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-4">
@@ -556,7 +653,7 @@ export default function UnifiedGroupCalendar({
               <strong>Tip:</strong>{" "}
               {visibleMembers.size > 1
                 ? "Toggle off other members to edit your schedule"
-                : "Click and drag to edit your schedule. Hover over block edges to resize."}
+                : "Click and drag to edit. Hover over edges to resize."}
             </p>
 
             {visibleMembers.has(currentUserId) && visibleMembers.size === 1 && (
@@ -580,16 +677,166 @@ export default function UnifiedGroupCalendar({
             )}
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Schedule"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowTimeInput(!showTimeInput)}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
+            >
+              {showTimeInput ? "Hide" : "Add Exact Time"}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Schedule"}
+            </button>
+          </div>
         </div>
 
-        {/* Member toggles */}
+        {showTimeInput &&
+          visibleMembers.has(currentUserId) &&
+          visibleMembers.size === 1 && (
+            <div className="mb-4 p-4 bg-white rounded-lg border-2 border-purple-300">
+              <h3 className="font-semibold text-gray-800 mb-3">
+                Add Exact Time Block
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Day
+                  </label>
+                  <select
+                    value={timeInput.day}
+                    onChange={(e) =>
+                      setTimeInput({ ...timeInput, day: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                  >
+                    <option value="">Select a day</option>
+                    {days.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      placeholder="Hour"
+                      value={timeInput.startHour}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          startHour: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <span className="flex items-center">:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="Min"
+                      value={timeInput.startMinute}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          startMinute: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <select
+                      value={timeInput.startPeriod}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          startPeriod: e.target.value as "AM" | "PM",
+                        })
+                      }
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      placeholder="Hour"
+                      value={timeInput.endHour}
+                      onChange={(e) =>
+                        setTimeInput({ ...timeInput, endHour: e.target.value })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <span className="flex items-center">:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="Min"
+                      value={timeInput.endMinute}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          endMinute: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <select
+                      value={timeInput.endPeriod}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          endPeriod: e.target.value as "AM" | "PM",
+                        })
+                      }
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-span-full flex gap-2">
+                  <button
+                    onClick={handleAddTimeBlock}
+                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
+                  >
+                    Add {blockType === "available" ? "Free" : "Busy"} Time
+                  </button>
+                  <button
+                    onClick={() => setShowTimeInput(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         <div className="mb-3">
           <span className="text-sm font-medium text-gray-700 mr-2">
             Show schedules:
@@ -608,314 +855,244 @@ export default function UnifiedGroupCalendar({
                 }`}
               >
                 {getMemberName(member.user_id)}
-                {visibleMembers.has(member.user_id)}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Overlap filter toggles */}
-        {visibleMembers.size > 1 && (
-          <div className="border-t border-blue-200 pt-3">
-            <span className="text-sm font-medium text-gray-700 mr-2">
-              Filter by overlaps:
-            </span>
-            <div className="flex flex-wrap gap-2 mt-2">
-              <button
-                onClick={() => {
-                  setShowOnlyOverlapFree(!showOnlyOverlapFree);
-                  if (!showOnlyOverlapFree) setShowOnlyOverlapBusy(false);
-                }}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                  showOnlyOverlapFree
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                {showOnlyOverlapFree}Show Only Overlapping Free Times
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowOnlyOverlapBusy(!showOnlyOverlapBusy);
-                  if (!showOnlyOverlapBusy) setShowOnlyOverlapFree(false);
-                }}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                  showOnlyOverlapBusy
-                    ? "bg-red-600 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                {showOnlyOverlapBusy}Show Only Overlapping Busy Times
-              </button>
-
-              {(showOnlyOverlapFree || showOnlyOverlapBusy) && (
+          {visibleMembers.size > 1 && (
+            <div className="border-t border-blue-200 pt-3">
+              <span className="text-sm font-medium text-gray-700 mr-2">
+                Filter by overlaps:
+              </span>
+              <div className="flex flex-wrap gap-2 mt-2">
                 <button
                   onClick={() => {
-                    setShowOnlyOverlapFree(false);
-                    setShowOnlyOverlapBusy(false);
+                    setShowOnlyOverlapFree(!showOnlyOverlapFree);
+                    if (!showOnlyOverlapFree) setShowOnlyOverlapBusy(false);
                   }}
-                  className="px-3 py-1 rounded-lg text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 transition"
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    showOnlyOverlapFree
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
                 >
-                  Clear Filter
+                  Show Only Overlapping Free Times
                 </button>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* Overlap indicators */}
-        {visibleMembers.size > 1 &&
-          !showOnlyOverlapFree &&
-          !showOnlyOverlapBusy && (
-            <div className="mt-3 p-2 bg-purple-100 rounded-lg">
-              <p className="text-sm text-purple-800">
-                <strong>Showing overlaps:</strong> Darker areas = more people
-                available
-              </p>
+                <button
+                  onClick={() => {
+                    setShowOnlyOverlapBusy(!showOnlyOverlapBusy);
+                    if (!showOnlyOverlapBusy) setShowOnlyOverlapFree(false);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                    showOnlyOverlapBusy
+                      ? "bg-red-600 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  Show Only Overlapping Busy Times
+                </button>
+
+                {(showOnlyOverlapFree || showOnlyOverlapBusy) && (
+                  <button
+                    onClick={() => {
+                      setShowOnlyOverlapFree(false);
+                      setShowOnlyOverlapBusy(false);
+                    }}
+                    className="px-3 py-1 rounded-lg text-sm font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 transition"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
             </div>
           )}
-
-        {showOnlyOverlapFree && (
-          <div className="mt-3 p-2 bg-green-100 rounded-lg">
-            <p className="text-sm text-green-800">
-              <strong>Filtering:</strong> Only showing times when 2+ members are
-              free
-            </p>
-          </div>
-        )}
-
-        {showOnlyOverlapBusy && (
-          <div className="mt-3 p-2 bg-red-100 rounded-lg">
-            <p className="text-sm text-red-800">
-              <strong>Filtering:</strong> Only showing times when 2+ members are
-              busy
-            </p>
-          </div>
-        )}
-      </div>
-
-      {saveMessage && (
-        <div
-          className={`p-3 ${
-            saveMessage.includes("Error")
-              ? "bg-red-50 text-red-600"
-              : "bg-green-50 text-green-600"
-          }`}
-        >
-          {saveMessage}
         </div>
-      )}
 
-      {/* Calendar */}
-      <div
-        className="overflow-x-auto"
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <div className="min-w-[800px] select-none" ref={calendarRef}>
-          <div className="grid grid-cols-8 border-b border-gray-200">
-            <div className="bg-gray-50 p-2 border-r border-gray-200"></div>
-            {days.map((day) => (
-              <div
-                key={day}
-                className="bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0"
-              >
-                {day.slice(0, 3)}
-              </div>
-            ))}
+        {saveMessage && (
+          <div
+            className={`p-3 ${
+              saveMessage.includes("Error")
+                ? "bg-red-50 text-red-600"
+                : "bg-green-50 text-green-600"
+            }`}
+          >
+            {saveMessage}
           </div>
+        )}
 
-          <div className="relative">
-            {hours.map((hour) => (
-              <div
-                key={hour}
-                className="grid grid-cols-8 border-b border-gray-200 last:border-b-0"
-              >
-                <div className="bg-gray-50 p-2 text-sm text-gray-600 border-r border-gray-200 flex items-center h-16 -mt-7.5">
-                  {formatHour(hour)}
+        <div
+          className="overflow-x-auto"
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <div className="min-w-[800px] select-none" ref={calendarRef}>
+            <div className="grid grid-cols-8 border-b border-gray-200">
+              <div className="bg-gray-50 p-2 border-r border-gray-200"></div>
+              {days.map((day) => (
+                <div
+                  key={day}
+                  className="bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0"
+                >
+                  {day.slice(0, 3)}
                 </div>
+              ))}
+            </div>
 
-                {days.map((day) => {
-                  const inDragSelection = isInDragSelection(day, hour);
-                  const overlapCount = countOverlappingMembers(day, hour);
-                  const visibleCount = visibleMembers.size;
-                  const shouldShow = shouldShowTimeSlot(day, hour);
+            <div className="relative">
+              {hours.map((hour) => (
+                <div
+                  key={hour}
+                  className="grid grid-cols-8 border-b border-gray-200 last:border-b-0"
+                >
+                  <div className="bg-gray-50 p-2 text-sm text-gray-600 border-r border-gray-200 flex items-center h-16">
+                    {formatHour(hour)}
+                  </div>
 
-                  let bgColor = "";
-                  if (visibleCount > 1 && overlapCount > 0) {
-                    const intensity = overlapCount / visibleCount;
-                    if (overlapCount === visibleCount) bgColor = "bg-green-100";
-                    else if (intensity >= 0.5) bgColor = "bg-yellow-50";
-                    else bgColor = "bg-orange-50";
-                  }
+                  {days.map((day) => {
+                    const inDragSelection = isInDragSelection(day, hour);
+                    const overlapCount = countOverlappingMembers(day, hour);
+                    const visibleCount = visibleMembers.size;
+                    const shouldShow = shouldShowTimeSlot(day, hour);
 
-                  if (
-                    !shouldShow &&
-                    (showOnlyOverlapFree || showOnlyOverlapBusy)
-                  ) {
-                    bgColor = "bg-gray-100 opacity-30";
-                  }
+                    let bgColor = "";
+                    if (visibleCount > 1 && overlapCount > 0) {
+                      const intensity = overlapCount / visibleCount;
+                      if (overlapCount === visibleCount)
+                        bgColor = "bg-green-100";
+                      else if (intensity >= 0.5) bgColor = "bg-yellow-50";
+                      else bgColor = "bg-orange-50";
+                    }
 
-                  return (
-                    <div
-                      key={`${day}-${hour}`}
-                      onMouseDown={() => handleMouseDown(day, hour)}
-                      onMouseEnter={() => handleMouseEnter(day, hour)}
-                      className={`relative h-16 border-r border-gray-200 last:border-r-0 cursor-pointer transition ${
-                        inDragSelection
-                          ? "bg-blue-100"
-                          : bgColor || "hover:bg-blue-50"
-                      }`}
-                    >
-                      {getVisibleBlocks()
-                        .filter((block) => {
-                          if (
-                            !(
+                    if (
+                      !shouldShow &&
+                      (showOnlyOverlapFree || showOnlyOverlapBusy)
+                    ) {
+                      bgColor = "bg-gray-100 opacity-30";
+                    }
+
+                    return (
+                      <div
+                        key={`${day}-${hour}`}
+                        onMouseDown={() => handleMouseDown(day, hour)}
+                        onMouseEnter={() => handleMouseEnter(day, hour)}
+                        className={`relative h-16 border-r border-gray-200 last:border-r-0 cursor-pointer transition ${
+                          inDragSelection
+                            ? "bg-blue-100"
+                            : bgColor || "hover:bg-blue-50"
+                        }`}
+                      >
+                        {getVisibleBlocks()
+                          .filter((block) => {
+                            const blockStartsInThisHour =
                               block.day === day &&
-                              block.startHour <= hour &&
-                              block.endHour > hour
-                            )
-                          ) {
-                            return false;
-                          }
+                              Math.floor(block.startHour) === hour;
 
-                          if (!showOnlyOverlapFree && !showOnlyOverlapBusy) {
-                            return true;
-                          }
+                            if (!blockStartsInThisHour) return false;
+                            if (!showOnlyOverlapFree && !showOnlyOverlapBusy)
+                              return true;
+                            return shouldShow;
+                          })
+                          .map((block, index) => {
+                            const blockHeight =
+                              (block.endHour - block.startHour) * 64;
+                            const offsetTop = (block.startHour - hour) * 64;
+                            const isMyBlock = block.userId === currentUserId;
 
-                          return shouldShow;
-                        })
-                        .map((block, index) => {
-                          if (block.startHour !== hour) return null;
-
-                          let visibleStartHour = block.startHour;
-                          let visibleEndHour = block.endHour;
-
-                          if (showOnlyOverlapFree || showOnlyOverlapBusy) {
-                            for (
-                              let h = block.startHour;
-                              h < block.endHour;
-                              h++
-                            ) {
-                              if (shouldShowTimeSlot(day, h)) {
-                                visibleStartHour = h;
-                                break;
-                              }
-                            }
-
-                            for (
-                              let h = block.endHour - 1;
-                              h >= block.startHour;
-                              h--
-                            ) {
-                              if (shouldShowTimeSlot(day, h)) {
-                                visibleEndHour = h + 1;
-                                break;
-                              }
-                            }
-
-                            if (visibleStartHour >= visibleEndHour) return null;
-                          }
-
-                          const blockHeight =
-                            (visibleEndHour - visibleStartHour) * 64;
-                          const offsetTop = (visibleStartHour - hour) * 64;
-                          const isMyBlock = block.userId === currentUserId;
-
-                          return (
-                            <div
-                              key={`${block.id}-${index}`}
-                              className={`absolute left-0 right-0 ${getUserColor(
-                                block.userId,
-                                block.status
-                              )} border-2 flex flex-col items-center justify-center z-10 ${
-                                isMyBlock &&
-                                !showOnlyOverlapFree &&
-                                !showOnlyOverlapBusy &&
-                                visibleMembers.size === 1
-                                  ? "cursor-pointer hover:opacity-80"
-                                  : "cursor-default opacity-70"
-                              } transition group`}
-                              style={{
-                                height: `${blockHeight}px`,
-                                top: `${offsetTop}px`,
-                                pointerEvents: isResizing ? "none" : "auto",
-                              }}
-                              title={`${getMemberName(block.userId)} - ${
-                                block.status === "available" ? "Free" : "Busy"
-                              }`}
-                            >
-                              {/* Top resize handle */}
-                              {isMyBlock &&
-                                !showOnlyOverlapFree &&
-                                !showOnlyOverlapBusy &&
-                                visibleMembers.size === 1 &&
-                                blockHeight >= 32 && (
-                                  <div
-                                    className="absolute top-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
-                                    onMouseDown={(e) =>
-                                      startResize(e, block.id, "top", block.day)
-                                    }
-                                  />
-                                )}
-
-                              {/* Block content */}
+                            return (
                               <div
-                                onClick={(e) => {
-                                  if (
-                                    isMyBlock &&
-                                    !showOnlyOverlapFree &&
-                                    !showOnlyOverlapBusy &&
-                                    visibleMembers.size === 1
-                                  ) {
-                                    e.stopPropagation();
-                                    setBlocks(
-                                      blocks.filter((b) => b.id !== block.id)
-                                    );
-                                  }
+                                key={`${block.id}-${index}`}
+                                className={`absolute left-0 right-0 ${getUserColor(
+                                  block.userId,
+                                  block.status
+                                )} border-2 flex flex-col items-center justify-center z-10 ${
+                                  isMyBlock &&
+                                  !showOnlyOverlapFree &&
+                                  !showOnlyOverlapBusy &&
+                                  visibleMembers.size === 1
+                                    ? "cursor-pointer hover:opacity-80"
+                                    : "cursor-default opacity-70"
+                                } transition group`}
+                                style={{
+                                  height: `${blockHeight}px`,
+                                  top: `${offsetTop}px`,
+                                  pointerEvents: isResizing ? "none" : "auto",
                                 }}
-                                className="flex-1 flex items-center justify-center w-full"
+                                title={`${getMemberName(block.userId)} - ${
+                                  block.status === "available" ? "Free" : "Busy"
+                                }`}
                               >
-                                <span className="text-xs font-medium text-gray-700 pointer-events-none">
-                                  {visibleCount === 1
-                                    ? block.status === "available"
-                                      ? "Free"
-                                      : "Busy"
-                                    : showOnlyOverlapFree || showOnlyOverlapBusy
-                                    ? block.status === "available"
-                                      ? "Overlap Free"
-                                      : "Overlap Busy"
-                                    : getMemberName(block.userId).split(" ")[0]}
-                                </span>
-                              </div>
+                                {isMyBlock &&
+                                  !showOnlyOverlapFree &&
+                                  !showOnlyOverlapBusy &&
+                                  visibleMembers.size === 1 &&
+                                  blockHeight >= 16 && (
+                                    <div
+                                      className="absolute top-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
+                                      onMouseDown={(e) =>
+                                        startResize(
+                                          e,
+                                          block.id,
+                                          "top",
+                                          block.day
+                                        )
+                                      }
+                                    />
+                                  )}
 
-                              {/* Bottom resize handle */}
-                              {isMyBlock &&
-                                !showOnlyOverlapFree &&
-                                !showOnlyOverlapBusy &&
-                                visibleMembers.size === 1 &&
-                                blockHeight >= 32 && (
-                                  <div
-                                    className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
-                                    onMouseDown={(e) =>
-                                      startResize(
-                                        e,
-                                        block.id,
-                                        "bottom",
-                                        block.day
-                                      )
+                                <div
+                                  onClick={(e) => {
+                                    if (
+                                      isMyBlock &&
+                                      !showOnlyOverlapFree &&
+                                      !showOnlyOverlapBusy &&
+                                      visibleMembers.size === 1
+                                    ) {
+                                      e.stopPropagation();
+                                      setBlocks(
+                                        blocks.filter((b) => b.id !== block.id)
+                                      );
                                     }
-                                  />
-                                )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                                  }}
+                                  className="flex-1 flex items-center justify-center w-full"
+                                >
+                                  <span className="text-xs font-medium text-gray-700 pointer-events-none">
+                                    {visibleCount === 1
+                                      ? block.status === "available"
+                                        ? "Free"
+                                        : "Busy"
+                                      : getMemberName(block.userId).split(
+                                          " "
+                                        )[0]}
+                                  </span>
+                                </div>
+
+                                {isMyBlock &&
+                                  !showOnlyOverlapFree &&
+                                  !showOnlyOverlapBusy &&
+                                  visibleMembers.size === 1 &&
+                                  blockHeight >= 16 && (
+                                    <div
+                                      className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
+                                      onMouseDown={(e) =>
+                                        startResize(
+                                          e,
+                                          block.id,
+                                          "bottom",
+                                          block.day
+                                        )
+                                      }
+                                    />
+                                  )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
