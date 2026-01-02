@@ -152,17 +152,16 @@ export default function UnifiedGroupCalendar({
       return;
     }
 
-    // Check for conflicts with different status blocks
+    // 1. Check for conflicts ONLY with DIFFERENT status blocks (e.g., Free vs Busy)
     const hasConflict = blocks.some((block) => {
       if (block.day !== timeInput.day) return false;
-      if (block.status === blockType) return false;
+      if (block.status === blockType) return false; // Ignore same status for conflict check
 
-      const hasOverlap =
+      return (
         (startHour >= block.startHour && startHour < block.endHour) ||
         (endHour > block.startHour && endHour <= block.endHour) ||
-        (startHour <= block.startHour && endHour >= block.endHour);
-
-      return hasOverlap;
+        (startHour <= block.startHour && endHour >= block.endHour)
+      );
     });
 
     if (hasConflict) {
@@ -170,19 +169,7 @@ export default function UnifiedGroupCalendar({
       return;
     }
 
-    // Remove overlapping blocks of same status
-    const filteredBlocks = blocks.filter((block) => {
-      if (block.day !== timeInput.day) return true;
-      if (block.status !== blockType) return true;
-
-      const hasOverlap =
-        (startHour >= block.startHour && startHour < block.endHour) ||
-        (endHour > block.startHour && endHour <= block.endHour) ||
-        (startHour <= block.startHour && endHour >= block.endHour);
-
-      return !hasOverlap;
-    });
-
+    // 2. Prepare the new block
     const newBlock: AvailabilityBlock = {
       id: `${timeInput.day}-${startHour}-${nextId}`,
       day: timeInput.day,
@@ -192,8 +179,11 @@ export default function UnifiedGroupCalendar({
       userId: currentUserId,
     };
 
-    // Merge overlapping blocks
-    const mergedBlocks = mergeOverlappingBlocks([...filteredBlocks, newBlock]);
+    // 3. Merge EVERYTHING together
+    // We don't filter out same-status blocks anymore.
+    // mergeOverlappingBlocks will see the 9-11 and 10-11:30 and combine them.
+    const mergedBlocks = mergeOverlappingBlocks([...blocks, newBlock]);
+
     setBlocks(mergedBlocks);
     setNextId(nextId + 1);
 
