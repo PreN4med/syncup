@@ -1121,7 +1121,10 @@ export default function UnifiedGroupCalendar({
                               : bgColor || "hover:bg-blue-50"
                           }`}
                         >
-                          {getVisibleBlocks()
+                          {(activeSuggestion
+                            ? [...blocks, ...allMemberBlocks]
+                            : getVisibleBlocks()
+                          )
                             .filter((block) => {
                               const blockStartsInThisHour =
                                 block.day === day &&
@@ -1290,7 +1293,7 @@ export default function UnifiedGroupCalendar({
                                     </span>
                                   </div>
 
-                                  {/* Resize Handles (Only show when NO filters/suggestions are active) */}
+                                  {/* Resize Handles */}
                                   {isMyBlock &&
                                     !showOnlyOverlapFree &&
                                     !showOnlyOverlapBusy &&
