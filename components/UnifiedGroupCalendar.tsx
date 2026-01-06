@@ -297,7 +297,9 @@ export default function UnifiedGroupCalendar({
     const y = clientY - rect.top;
     const hourHeight = 64;
     const decimalHour = y / hourHeight;
-    return Math.max(8, Math.min(22, 8 + decimalHour));
+
+    const snappedHour = Math.round(decimalHour * 4) / 4;
+    return Math.max(8, Math.min(22, 8 + snappedHour));
   };
 
   /**
@@ -601,19 +603,28 @@ export default function UnifiedGroupCalendar({
     return hour >= minHour && hour <= maxHour;
   };
 
-  const handleMouseDown = (day: string, hour: number) => {
+  const handleMouseDown = (e: React.MouseEvent, day: string, hour: number) => {
     if (isResizing) return;
     if (!visibleMembers.has(currentUserId) || visibleMembers.size > 1) return;
 
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const relativeY = e.clientY - rect.top;
+    const snappedStart = hour + Math.round((relativeY / 64) * 4) / 4;
+
     setIsDragging(true);
-    setDragStartCell({ day, hour });
-    setDragCurrentCell({ day, hour });
+    setDragStartCell({ day, hour: snappedStart });
+    setDragCurrentCell({ day, hour: snappedStart });
     setDragMode(hasMyBlock(day, hour) ? "remove" : "add");
   };
 
-  const handleMouseEnter = (day: string, hour: number) => {
+  const handleMouseEnter = (e: React.MouseEvent, day: string, hour: number) => {
+    // Added 'e'
     if (isDragging && dragStartCell && day === dragStartCell.day) {
-      setDragCurrentCell({ day, hour });
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+      const snappedCurrent = hour + Math.round((relativeY / 64) * 4) / 4;
+
+      setDragCurrentCell({ day, hour: snappedCurrent });
     }
   };
 
@@ -659,7 +670,7 @@ export default function UnifiedGroupCalendar({
         id: `${dragStartCell.day}-${minHour}-${nextId}`,
         day: dragStartCell.day,
         startHour: minHour,
-        endHour: maxHour + 1,
+        endHour: maxHour,
         status: blockType,
         userId: currentUserId,
       };
@@ -1113,8 +1124,8 @@ export default function UnifiedGroupCalendar({
                       return (
                         <div
                           key={`${day}-${hour}`}
-                          onMouseDown={() => handleMouseDown(day, hour)}
-                          onMouseEnter={() => handleMouseEnter(day, hour)}
+                          onMouseDown={(e) => handleMouseDown(e, day, hour)}
+                          onMouseEnter={(e) => handleMouseEnter(e, day, hour)}
                           className={`relative h-16 border-r border-gray-200 last:border-r-0 cursor-pointer transition ${
                             inDragSelection
                               ? "bg-blue-100"
