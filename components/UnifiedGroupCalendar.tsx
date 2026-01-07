@@ -1257,7 +1257,7 @@ export default function UnifiedGroupCalendar({
 
                               const blockHeight =
                                 (displayEnd - displayStart) * 64;
-                              const offsetTop = (displayStart - hour) * 64 + 32;
+                              const offsetTop = (displayStart - hour) * 64;
                               const isMyBlock = block.userId === currentUserId;
 
                               return (
