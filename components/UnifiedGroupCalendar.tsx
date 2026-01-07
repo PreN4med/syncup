@@ -618,13 +618,49 @@ export default function UnifiedGroupCalendar({
   };
 
   const handleMouseEnter = (e: React.MouseEvent, day: string, hour: number) => {
-    // Added 'e'
     if (isDragging && dragStartCell && day === dragStartCell.day) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const relativeY = e.clientY - rect.top;
       const snappedCurrent = hour + Math.round((relativeY / 64) * 4) / 4;
 
       setDragCurrentCell({ day, hour: snappedCurrent });
+    }
+  };
+
+  const handleCellClick = (day: string, hour: number) => {
+    if (isResizing) return;
+    if (!visibleMembers.has(currentUserId) || visibleMembers.size > 1) return;
+
+    const existingBlock = blocks.find(
+      (block) =>
+        block.day === day && hour >= block.startHour && hour < block.endHour
+    );
+
+    if (existingBlock) {
+      setBlocks(blocks.filter((b) => b.id !== existingBlock.id));
+    } else {
+      const hasConflict = blocks.some((block) => {
+        if (block.day !== day) return false;
+        if (block.status === blockType) return false;
+        return (
+          (hour >= block.startHour && hour < block.endHour) ||
+          (hour + 1 > block.startHour && hour + 1 <= block.endHour) ||
+          (hour <= block.startHour && hour + 1 >= block.endHour)
+        );
+      });
+
+      if (!hasConflict) {
+        const newBlock: AvailabilityBlock = {
+          id: `${day}-${hour}-${nextId}`,
+          day,
+          startHour: hour,
+          endHour: hour + 1,
+          status: blockType,
+          userId: currentUserId,
+        };
+        setBlocks(mergeOverlappingBlocks([...blocks, newBlock]));
+        setNextId(nextId + 1);
+      }
     }
   };
 
@@ -1124,6 +1160,7 @@ export default function UnifiedGroupCalendar({
                       return (
                         <div
                           key={`${day}-${hour}`}
+                          onClick={() => handleCellClick(day, hour)}
                           onMouseDown={(e) => handleMouseDown(e, day, hour)}
                           onMouseEnter={(e) => handleMouseEnter(e, day, hour)}
                           className={`relative h-16 border-r border-gray-200 last:border-r-0 cursor-pointer transition ${
