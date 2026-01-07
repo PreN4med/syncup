@@ -1113,12 +1113,12 @@ export default function UnifiedGroupCalendar({
             onMouseLeave={handleMouseUp}
           >
             <div className="min-w-[800px] select-none" ref={calendarRef}>
-              <div className="grid grid-cols-8 border-b border-gray-200">
-                <div className="bg-gray-50 p-2 border-r border-gray-200"></div>
+              <div className="grid grid-cols-8 border-b border-gray-400">
+                <div className="bg-gray-50 p-2 border-r border-gray-400"></div>
                 {days.map((day) => (
                   <div
                     key={day}
-                    className="bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0"
+                    className="bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-400 last:border-r-0"
                   >
                     {day.slice(0, 3)}
                   </div>
@@ -1129,9 +1129,9 @@ export default function UnifiedGroupCalendar({
                 {hours.map((hour) => (
                   <div
                     key={hour}
-                    className="grid grid-cols-8 border-b border-gray-200 last:border-b-0"
+                    className="grid grid-cols-8 border-b border-gray-400 last:border-b-0"
                   >
-                    <div className="bg-gray-50 p-2 text-sm text-gray-600 border-r border-gray-200 flex items-center h-16">
+                    <div className="bg-gray-50 p-2 text-sm text-gray-600 border-r border-gray-400 flex items-center h-16">
                       {formatHour(hour)}
                     </div>
 
@@ -1163,7 +1163,7 @@ export default function UnifiedGroupCalendar({
                           onClick={() => handleCellClick(day, hour)}
                           onMouseDown={(e) => handleMouseDown(e, day, hour)}
                           onMouseEnter={(e) => handleMouseEnter(e, day, hour)}
-                          className={`relative h-16 border-r border-gray-200 last:border-r-0 cursor-pointer transition ${
+                          className={`relative h-16 border-r border-gray-400 last:border-r-0 cursor-pointer transition ${
                             inDragSelection
                               ? "bg-blue-100"
                               : bgColor || "hover:bg-blue-50"
@@ -1257,7 +1257,7 @@ export default function UnifiedGroupCalendar({
 
                               const blockHeight =
                                 (displayEnd - displayStart) * 64;
-                              const offsetTop = (displayStart - hour) * 64;
+                              const offsetTop = (displayStart - hour) * 64 + 32;
                               const isMyBlock = block.userId === currentUserId;
 
                               return (
