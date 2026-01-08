@@ -1131,8 +1131,10 @@ export default function UnifiedGroupCalendar({
                     key={hour}
                     className="grid grid-cols-8 border-b border-gray-400 last:border-b-0"
                   >
-                    <div className="bg-gray-50 p-2 text-sm text-gray-600 border-r border-gray-400 flex items-center h-16">
-                      {formatHour(hour)}
+                    <div className="bg-gray-50 border-r border-gray-400 relative h-16">
+                      <span className="absolute -top-3 left-2 text-sm text-gray-600">
+                        {formatHour(hour)}
+                      </span>
                     </div>
 
                     {days.map((day) => {
