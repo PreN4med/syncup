@@ -876,151 +876,149 @@ export default function UnifiedGroupCalendar({
             </div>
           </div>
 
-          {showTimeInput &&
-            visibleMembers.has(currentUserId) &&
-            visibleMembers.size === 1 && (
-              <div className="mb-4 p-4 bg-white rounded-lg border-2 border-purple-300">
-                <h3 className="font-semibold text-gray-800 mb-3">
-                  Add Exact Time Block
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="col-span-full">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Day
-                    </label>
-                    <select
-                      value={timeInput.day}
+          {showTimeInput && (
+            <div className="mb-4 p-4 bg-white rounded-lg border-2 border-purple-300">
+              <h3 className="font-semibold text-gray-800 mb-3">
+                Add Exact Time Block
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Day
+                  </label>
+                  <select
+                    value={timeInput.day}
+                    onChange={(e) =>
+                      setTimeInput({ ...timeInput, day: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                  >
+                    <option value="">Select a day</option>
+                    {days.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      placeholder="Hour"
+                      value={timeInput.startHour}
                       onChange={(e) =>
-                        setTimeInput({ ...timeInput, day: e.target.value })
+                        setTimeInput({
+                          ...timeInput,
+                          startHour: e.target.value,
+                        })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <span className="flex items-center">:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="Min"
+                      value={timeInput.startMinute}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          startMinute: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <select
+                      value={timeInput.startPeriod}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          startPeriod: e.target.value as "AM" | "PM",
+                        })
+                      }
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
                     >
-                      <option value="">Select a day</option>
-                      {days.map((day) => (
-                        <option key={day} value={day}>
-                          {day}
-                        </option>
-                      ))}
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
                     </select>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Time
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="12"
-                        placeholder="Hour"
-                        value={timeInput.startHour}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            startHour: e.target.value,
-                          })
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      />
-                      <span className="flex items-center">:</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        placeholder="Min"
-                        value={timeInput.startMinute}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            startMinute: e.target.value,
-                          })
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      />
-                      <select
-                        value={timeInput.startPeriod}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            startPeriod: e.target.value as "AM" | "PM",
-                          })
-                        }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Time
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="12"
-                        placeholder="Hour"
-                        value={timeInput.endHour}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            endHour: e.target.value,
-                          })
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      />
-                      <span className="flex items-center">:</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        placeholder="Min"
-                        value={timeInput.endMinute}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            endMinute: e.target.value,
-                          })
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      />
-                      <select
-                        value={timeInput.endPeriod}
-                        onChange={(e) =>
-                          setTimeInput({
-                            ...timeInput,
-                            endPeriod: e.target.value as "AM" | "PM",
-                          })
-                        }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                      >
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="col-span-full flex gap-2">
-                    <button
-                      onClick={handleAddTimeBlock}
-                      className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      placeholder="Hour"
+                      value={timeInput.endHour}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          endHour: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <span className="flex items-center">:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="Min"
+                      value={timeInput.endMinute}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          endMinute: e.target.value,
+                        })
+                      }
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                    />
+                    <select
+                      value={timeInput.endPeriod}
+                      onChange={(e) =>
+                        setTimeInput({
+                          ...timeInput,
+                          endPeriod: e.target.value as "AM" | "PM",
+                        })
+                      }
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
                     >
-                      Add {blockType === "available" ? "Free" : "Busy"} Time
-                    </button>
-                    <button
-                      onClick={() => setShowTimeInput(false)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
-                    >
-                      Cancel
-                    </button>
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
                   </div>
                 </div>
+
+                <div className="col-span-full flex gap-2">
+                  <button
+                    onClick={handleAddTimeBlock}
+                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
+                  >
+                    Add {blockType === "available" ? "Free" : "Busy"} Time
+                  </button>
+                  <button
+                    onClick={() => setShowTimeInput(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+          )}
 
           <div className="mb-3">
             <span className="text-sm font-medium text-gray-700 mr-2">
