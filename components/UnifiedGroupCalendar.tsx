@@ -47,7 +47,6 @@ export default function UnifiedGroupCalendar({
     "Friday",
     "Saturday",
   ];
-  const hours = Array.from({ length: 14 }, (_, i) => i + 8);
 
   const supabase = createClient();
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -61,6 +60,27 @@ export default function UnifiedGroupCalendar({
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [blockType, setBlockType] = useState<"available" | "busy">("available");
+
+  const hours = useMemo(() => {
+    let min = 8;
+    let max = 22; // 10 PM
+
+    const allBlocks = [...blocks, ...allMemberBlocks];
+
+    allBlocks.forEach((block) => {
+      if (block.startHour <= min + 2) {
+        min = Math.min(min, Math.floor(block.startHour) - 2);
+      }
+      if (block.endHour >= max - 2) {
+        max = Math.max(max, Math.ceil(block.endHour) + 2);
+      }
+    });
+
+    min = Math.max(0, min);
+    max = Math.min(24, max);
+
+    return Array.from({ length: max - min }, (_, i) => i + min);
+  }, [blocks, allMemberBlocks]);
 
   // Time input state
   const [showTimeInput, setShowTimeInput] = useState(false);
@@ -241,7 +261,7 @@ export default function UnifiedGroupCalendar({
       return;
     }
 
-    if (startHour < 8 || endHour > 22) {
+    if (startHour < 0 || endHour > 24) {
       alert("Time must be between 8:00 AM and 10:00 PM");
       return;
     }
@@ -292,14 +312,17 @@ export default function UnifiedGroupCalendar({
    * Get hour from mouse Y position
    */
   const getHourFromMouseY = (clientY: number) => {
-    if (!calendarRef.current) return 8;
+    if (!calendarRef.current) return hours[0];
     const rect = calendarRef.current.getBoundingClientRect();
     const y = clientY - rect.top;
     const hourHeight = 64;
     const decimalHour = y / hourHeight;
 
     const snappedHour = Math.round(decimalHour * 4) / 4;
-    return Math.max(8, Math.min(22, 8 + snappedHour));
+    return Math.max(
+      hours[0],
+      Math.min(hours[hours.length - 1], hours[0] + snappedHour)
+    );
   };
 
   /**
