@@ -621,12 +621,11 @@ export default function UnifiedGroupCalendar({
     if (isDragging && dragStartCell && day === dragStartCell.day) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const relativeY = e.clientY - rect.top;
-      const snappedCurrent = hour + Math.round((relativeY / 64) * 4) / 4;
+      const snappedCurrent = hour + Math.round((relativeY / 64) * 4) / 4 + 1;
 
       setDragCurrentCell({ day, hour: snappedCurrent });
     }
   };
-
   const handleCellClick = (day: string, hour: number) => {
     if (isResizing) return;
     if (!visibleMembers.has(currentUserId) || visibleMembers.size > 1) return;
@@ -779,9 +778,9 @@ export default function UnifiedGroupCalendar({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4 bg-gray-50 min-h-screen">
+    <div className="flex flex-col lg:flex-row gap-2 p-2 bg-gray-50 min-h-screen">
       {/* Sidebar Recommendation */}
-      <div className="w-full lg:w-72 space-y-4">
+      <div className="w-full lg:w-46 space-y-4">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-green-100">
           <h3 className="text-sm font-bold text-green-800 mb-4 flex items-center gap-2">
             Best Meeting Times
@@ -803,7 +802,7 @@ export default function UnifiedGroupCalendar({
                 className={`w-full text-left p-3 rounded-xl border transition-all ${
                   activeSuggestion === s
                     ? "border-green-600 bg-green-50 shadow-md ring-2 ring-green-500/20"
-                    : "border-gray-100 hover:border-green-400 hover:bg-green-50"
+                    : "border-gray-500 hover:border-green-400 hover:bg-green-50"
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -827,7 +826,7 @@ export default function UnifiedGroupCalendar({
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className=" bg-white rounded-lg shadow overflow-hidden">
         <div className="p-4 bg-blue-50 border-b border-blue-200">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-4">
@@ -1112,7 +1111,7 @@ export default function UnifiedGroupCalendar({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
-            <div className="min-w-[800px] select-none" ref={calendarRef}>
+            <div className="min-w-[800px] select-none">
               <div className="grid grid-cols-8 border-b border-gray-400">
                 <div className="bg-gray-50 p-2 border-r border-gray-400"></div>
                 {days.map((day) => (
@@ -1125,14 +1124,14 @@ export default function UnifiedGroupCalendar({
                 ))}
               </div>
 
-              <div className="relative">
+              <div className="relative" ref={calendarRef}>
                 {hours.map((hour) => (
                   <div
                     key={hour}
                     className="grid grid-cols-8 border-b border-gray-400 last:border-b-0"
                   >
-                    <div className="bg-gray-50 border-r border-gray-400 relative h-16">
-                      <span className="absolute -top-3 left-2 text-sm text-gray-600">
+                    <div className="bg-gray-50 border-r border-gray-400 relative h-16 w-full">
+                      <span className="absolute -top-3 left-2 text-sm text-gray-600 pointer-events-none">
                         {formatHour(hour)}
                       </span>
                     </div>

@@ -70,7 +70,7 @@ export default async function GroupPage({
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-300">
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
@@ -105,7 +105,7 @@ export default async function GroupPage({
 
         {/* Members section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Members ({members?.length || 0})
           </h2>
           <div className="space-y-2">
@@ -136,7 +136,9 @@ export default async function GroupPage({
 
         {/* Unified Calendar - replaces both individual and comparison views */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-semibold mb-4">Group Schedule</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Group Schedule
+          </h2>
           <p className="text-gray-600 mb-4">
             Toggle members to see their schedules and find overlapping
             availability.
