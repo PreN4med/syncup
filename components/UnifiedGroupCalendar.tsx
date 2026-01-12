@@ -1300,7 +1300,11 @@ export default function UnifiedGroupCalendar({
                                   onMouseLeave={() => setTooltip(null)}
                                 >
                                   <div
+                                    onMouseDownCapture={(e) =>
+                                      e.stopPropagation()
+                                    }
                                     onClick={(e) => {
+                                      e.stopPropagation();
                                       if (
                                         isMyBlock &&
                                         !showOnlyOverlapFree &&
@@ -1308,7 +1312,6 @@ export default function UnifiedGroupCalendar({
                                         !activeSuggestion &&
                                         visibleMembers.size === 1
                                       ) {
-                                        e.stopPropagation();
                                         setBlocks(
                                           blocks.filter(
                                             (b) => b.id !== block.id
