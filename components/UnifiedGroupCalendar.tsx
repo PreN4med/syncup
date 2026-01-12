@@ -649,6 +649,7 @@ export default function UnifiedGroupCalendar({
       setDragCurrentCell({ day, hour: snappedCurrent });
     }
   };
+
   const handleCellClick = (day: string, hour: number) => {
     if (isResizing) return;
     if (!visibleMembers.has(currentUserId) || visibleMembers.size > 1) return;
@@ -697,12 +698,7 @@ export default function UnifiedGroupCalendar({
         if (block.day !== dragStartCell.day) return false;
         if (block.status === blockType) return false;
 
-        const hasOverlap =
-          (block.startHour >= minHour && block.startHour < maxHour + 1) ||
-          (block.endHour > minHour && block.endHour <= maxHour + 1) ||
-          (block.startHour <= minHour && block.endHour >= maxHour + 1);
-
-        return hasOverlap;
+        return block.startHour < maxHour + 1 && block.endHour > minHour;
       });
 
       if (hasConflict) {
@@ -711,18 +707,6 @@ export default function UnifiedGroupCalendar({
         setDragCurrentCell(null);
         return;
       }
-
-      const filteredBlocks = blocks.filter((block) => {
-        if (block.day !== dragStartCell.day) return true;
-        if (block.status !== blockType) return true;
-
-        const hasOverlap =
-          (block.startHour >= minHour && block.startHour < maxHour + 1) ||
-          (block.endHour > minHour && block.endHour <= maxHour + 1) ||
-          (block.startHour <= minHour && block.endHour >= maxHour + 1);
-
-        return !hasOverlap;
-      });
 
       const newBlock: AvailabilityBlock = {
         id: `${dragStartCell.day}-${minHour}-${nextId}`,
@@ -733,23 +717,15 @@ export default function UnifiedGroupCalendar({
         userId: currentUserId,
       };
 
-      const mergedBlocks = mergeOverlappingBlocks([
-        ...filteredBlocks,
-        newBlock,
-      ]);
-      setBlocks(mergedBlocks);
+      setBlocks(mergeOverlappingBlocks([...blocks, newBlock]));
+
       setNextId(nextId + 1);
     } else {
       setBlocks(
         blocks.filter((block) => {
           if (block.day !== dragStartCell.day) return true;
 
-          const hasOverlap =
-            (block.startHour >= minHour && block.startHour < maxHour + 1) ||
-            (block.endHour > minHour && block.endHour <= maxHour + 1) ||
-            (block.startHour <= minHour && block.endHour >= maxHour + 1);
-
-          return !hasOverlap;
+          return !(block.startHour < maxHour + 1 && block.endHour > minHour);
         })
       );
     }
@@ -781,6 +757,7 @@ export default function UnifiedGroupCalendar({
         if (next.startHour <= current.endHour) {
           current = {
             ...current,
+            startHour: Math.min(current.startHour, next.startHour),
             endHour: Math.max(current.endHour, next.endHour),
           };
         } else {
