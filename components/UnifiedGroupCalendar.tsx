@@ -1254,8 +1254,16 @@ export default function UnifiedGroupCalendar({
                               if (Math.floor(displayStart) !== hour)
                                 return null;
 
+                              const mergedBorders = Math.max(
+                                0,
+                                Math.floor(displayEnd - 0.01) -
+                                  Math.floor(displayStart)
+                              );
+
                               const blockHeight =
-                                (displayEnd - displayStart) * 64;
+                                (displayEnd - displayStart) * 64 +
+                                mergedBorders;
+
                               const offsetTop = (displayStart - hour) * 64;
                               const isMyBlock = block.userId === currentUserId;
 
