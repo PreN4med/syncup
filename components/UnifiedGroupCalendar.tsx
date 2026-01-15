@@ -462,6 +462,7 @@ export default function UnifiedGroupCalendar({
     }
 
     const memberIndex = members.findIndex((m) => m.user_id === userId);
+
     const colors = [
       {
         available: "bg-blue-200 border-blue-400",
@@ -482,6 +483,66 @@ export default function UnifiedGroupCalendar({
       {
         available: "bg-indigo-200 border-indigo-400",
         busy: "bg-indigo-300 border-indigo-500",
+      },
+      {
+        available: "bg-cyan-200 border-cyan-400",
+        busy: "bg-cyan-300 border-cyan-500",
+      },
+      {
+        available: "bg-orange-200 border-orange-400",
+        busy: "bg-orange-300 border-orange-500",
+      },
+      {
+        available: "bg-rose-200 border-rose-400",
+        busy: "bg-rose-300 border-rose-500",
+      },
+      {
+        available: "bg-teal-200 border-teal-400",
+        busy: "bg-teal-300 border-teal-500",
+      },
+      {
+        available: "bg-fuchsia-200 border-fuchsia-400",
+        busy: "bg-fuchsia-300 border-fuchsia-500",
+      },
+      {
+        available: "bg-sky-200 border-sky-400",
+        busy: "bg-sky-300 border-sky-500",
+      },
+      {
+        available: "bg-violet-200 border-violet-400",
+        busy: "bg-violet-300 border-violet-500",
+      },
+      {
+        available: "bg-lime-200 border-lime-400",
+        busy: "bg-lime-300 border-lime-500",
+      },
+      {
+        available: "bg-emerald-200 border-emerald-400",
+        busy: "bg-emerald-300 border-emerald-500",
+      },
+      {
+        available: "bg-slate-200 border-slate-400",
+        busy: "bg-slate-300 border-slate-500",
+      },
+      {
+        available: "bg-amber-200 border-amber-400",
+        busy: "bg-amber-300 border-amber-500",
+      },
+      {
+        available: "bg-stone-200 border-stone-400",
+        busy: "bg-stone-300 border-stone-500",
+      },
+      {
+        available: "bg-blue-100 border-blue-300",
+        busy: "bg-blue-200 border-blue-400",
+      },
+      {
+        available: "bg-purple-100 border-purple-300",
+        busy: "bg-purple-200 border-purple-400",
+      },
+      {
+        available: "bg-zinc-200 border-zinc-400",
+        busy: "bg-zinc-300 border-zinc-500",
       },
     ];
 
