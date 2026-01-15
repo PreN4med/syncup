@@ -84,14 +84,11 @@ export default function UnifiedGroupCalendar({
 
   // Time input state
   const [showTimeInput, setShowTimeInput] = useState(false);
+
   const [timeInput, setTimeInput] = useState({
     day: "",
-    startHour: "",
-    startMinute: "",
-    startPeriod: "AM" as "AM" | "PM",
-    endHour: "",
-    endMinute: "",
-    endPeriod: "AM" as "AM" | "PM",
+    startTime: "09:00",
+    endTime: "10:00",
   });
 
   // Toggle members
@@ -234,28 +231,18 @@ export default function UnifiedGroupCalendar({
    * Add block from time input
    */
   const handleAddTimeBlock = () => {
-    if (
-      !timeInput.day ||
-      !timeInput.startHour ||
-      !timeInput.startMinute ||
-      !timeInput.endHour ||
-      !timeInput.endMinute
-    ) {
+    if (!timeInput.day || !timeInput.startTime || !timeInput.endTime) {
       alert("Please fill in all time fields");
       return;
     }
 
-    const startHour = convertTo24Hour(
-      timeInput.startHour,
-      timeInput.startMinute,
-      timeInput.startPeriod
-    );
-    const endHour = convertTo24Hour(
-      timeInput.endHour,
-      timeInput.endMinute,
-      timeInput.endPeriod
-    );
+    const parseTime = (timeStr: string) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h + m / 60;
+    };
 
+    const startHour = parseTime(timeInput.startTime);
+    const endHour = parseTime(timeInput.endTime);
     if (endHour <= startHour) {
       alert("End time must be after start time");
       return;
@@ -298,12 +285,8 @@ export default function UnifiedGroupCalendar({
 
     setTimeInput({
       day: "",
-      startHour: "",
-      startMinute: "",
-      startPeriod: "AM",
-      endHour: "",
-      endMinute: "",
-      endPeriod: "AM",
+      startTime: "09:00",
+      endTime: "10:00",
     });
     setShowTimeInput(false);
   };
@@ -963,104 +946,34 @@ export default function UnifiedGroupCalendar({
                   </select>
                 </div>
 
+                {/* Start Time Section */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Start Time
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      placeholder="Hour"
-                      value={timeInput.startHour}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          startHour: e.target.value,
-                        })
-                      }
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    />
-                    <span className="flex items-center">:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="Min"
-                      value={timeInput.startMinute}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          startMinute: e.target.value,
-                        })
-                      }
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    />
-                    <select
-                      value={timeInput.startPeriod}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          startPeriod: e.target.value as "AM" | "PM",
-                        })
-                      }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
-                  </div>
+                  <input
+                    type="time"
+                    value={timeInput.startTime}
+                    onChange={(e) =>
+                      setTimeInput({ ...timeInput, startTime: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                  />
                 </div>
 
+                {/* End Time Section */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     End Time
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      placeholder="Hour"
-                      value={timeInput.endHour}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          endHour: e.target.value,
-                        })
-                      }
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    />
-                    <span className="flex items-center">:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="Min"
-                      value={timeInput.endMinute}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          endMinute: e.target.value,
-                        })
-                      }
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    />
-                    <select
-                      value={timeInput.endPeriod}
-                      onChange={(e) =>
-                        setTimeInput({
-                          ...timeInput,
-                          endPeriod: e.target.value as "AM" | "PM",
-                        })
-                      }
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
-                  </div>
+                  <input
+                    type="time"
+                    value={timeInput.endTime}
+                    onChange={(e) =>
+                      setTimeInput({ ...timeInput, endTime: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                  />
                 </div>
 
                 <div className="col-span-full flex gap-2">
