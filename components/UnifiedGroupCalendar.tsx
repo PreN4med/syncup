@@ -1121,7 +1121,7 @@ export default function UnifiedGroupCalendar({
                     className="grid grid-cols-8 border-b border-gray-400 last:border-b-0"
                   >
                     <div className="bg-gray-50 border-r border-gray-400 relative h-16 w-full">
-                      <span className="absolute -top-3 left-2 text-sm text-gray-600 pointer-events-none">
+                      <span className="absolute -top-2.5 left-3 text-sm text-gray-600 pointer-events-none bg-gray-50 px-1">
                         {formatHour(hour)}
                       </span>
                     </div>
@@ -1342,7 +1342,6 @@ export default function UnifiedGroupCalendar({
                                             )[0]}
                                     </span>
                                   </div>
-
                                   {/* Resize Handles */}
                                   {isMyBlock &&
                                     !showOnlyOverlapFree &&
@@ -1351,8 +1350,9 @@ export default function UnifiedGroupCalendar({
                                     visibleMembers.size === 1 &&
                                     blockHeight >= 16 && (
                                       <>
+                                        {/* Top Resize Handle */}
                                         <div
-                                          className="absolute top-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
+                                          className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-20 group/handle"
                                           onMouseDown={(e) =>
                                             startResize(
                                               e,
@@ -1361,9 +1361,14 @@ export default function UnifiedGroupCalendar({
                                               block.day,
                                             )
                                           }
-                                        />
+                                        >
+                                          {/* Drag Bar */}
+                                          <div className="mx-auto w-8 h-1 bg-black/60 rounded-full mt-1 opacity-0 group-hover/handle:opacity-100 transition-opacity shadow-sm" />
+                                        </div>
+
+                                        {/* Bottom Resize Handle */}
                                         <div
-                                          className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-black hover:bg-opacity-30 z-20 opacity-0 group-hover:opacity-100 transition"
+                                          className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize z-20 group/handle"
                                           onMouseDown={(e) =>
                                             startResize(
                                               e,
@@ -1372,7 +1377,10 @@ export default function UnifiedGroupCalendar({
                                               block.day,
                                             )
                                           }
-                                        />
+                                        >
+                                          {/* Drag Bar */}
+                                          <div className="mx-auto w-8 h-1 bg-black/60 rounded-full mb-1 opacity-0 group-hover/handle:opacity-100 transition-opacity shadow-sm" />
+                                        </div>
                                       </>
                                     )}
                                 </div>
