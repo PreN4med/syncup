@@ -54,12 +54,14 @@ export default function UnifiedGroupCalendar({
   // State
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [allMemberBlocks, setAllMemberBlocks] = useState<AvailabilityBlock[]>(
-    []
+    [],
   );
   const [nextId, setNextId] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [blockType, setBlockType] = useState<"available" | "busy">("available");
+
+  const [error, setError] = useState<string | null>(null);
 
   const hours = useMemo(() => {
     let min = 8;
@@ -93,7 +95,7 @@ export default function UnifiedGroupCalendar({
 
   // Toggle members
   const [visibleMembers, setVisibleMembers] = useState<Set<string>>(
-    new Set([currentUserId])
+    new Set([currentUserId]),
   );
 
   // Overlap filter states
@@ -152,8 +154,8 @@ export default function UnifiedGroupCalendar({
               b.day === day &&
               b.status === "available" &&
               h >= b.startHour &&
-              h < b.endHour
-          )
+              h < b.endHour,
+          ),
         ).length;
 
         // Threshold: Only suggest if at least 2 people or 50% of group are free
@@ -189,7 +191,7 @@ export default function UnifiedGroupCalendar({
   const convertTo24Hour = (
     hour: string,
     minute: string,
-    period: "AM" | "PM"
+    period: "AM" | "PM",
   ): number => {
     let h = parseInt(hour);
     const m = parseInt(minute);
@@ -208,7 +210,7 @@ export default function UnifiedGroupCalendar({
   const getOverlappingNames = (
     day: string,
     hour: number,
-    status: "available" | "busy"
+    status: "available" | "busy",
   ) => {
     const visibleBlocks = getVisibleBlocks();
     const names = new Set<string>();
@@ -231,8 +233,10 @@ export default function UnifiedGroupCalendar({
    * Add block from time input
    */
   const handleAddTimeBlock = () => {
+    setError(null);
+
     if (!timeInput.day || !timeInput.startTime || !timeInput.endTime) {
-      alert("Please fill in all time fields");
+      setError("Please fill in all time fields");
       return;
     }
 
@@ -243,20 +247,15 @@ export default function UnifiedGroupCalendar({
 
     const startHour = parseTime(timeInput.startTime);
     const endHour = parseTime(timeInput.endTime);
-    if (endHour <= startHour) {
-      alert("End time must be after start time");
-      return;
-    }
 
-    if (startHour < 0 || endHour > 24) {
-      alert("Time must be between 8:00 AM and 10:00 PM");
+    if (endHour <= startHour) {
+      setError("End time must be after start time");
       return;
     }
 
     const hasConflict = blocks.some((block) => {
       if (block.day !== timeInput.day) return false;
       if (block.status === blockType) return false;
-
       return (
         (startHour >= block.startHour && startHour < block.endHour) ||
         (endHour > block.startHour && endHour <= block.endHour) ||
@@ -265,7 +264,7 @@ export default function UnifiedGroupCalendar({
     });
 
     if (hasConflict) {
-      alert("This time conflicts with an existing block of different status");
+      setError("This time conflicts with an existing block");
       return;
     }
 
@@ -282,12 +281,8 @@ export default function UnifiedGroupCalendar({
 
     setBlocks(mergedBlocks);
     setNextId(nextId + 1);
-
-    setTimeInput({
-      day: "",
-      startTime: "09:00",
-      endTime: "10:00",
-    });
+    setTimeInput({ day: "", startTime: "09:00", endTime: "10:00" });
+    setError(null); // Clear error on success
     setShowTimeInput(false);
   };
 
@@ -304,7 +299,7 @@ export default function UnifiedGroupCalendar({
     const snappedHour = Math.round(decimalHour * 4) / 4;
     return Math.max(
       hours[0],
-      Math.min(hours[hours.length - 1], hours[0] + snappedHour)
+      Math.min(hours[hours.length - 1], hours[0] + snappedHour),
     );
   };
 
@@ -342,7 +337,7 @@ export default function UnifiedGroupCalendar({
 
         const myBlocks = loadedBlocks.filter((b) => b.userId === currentUserId);
         const otherBlocks = loadedBlocks.filter(
-          (b) => b.userId !== currentUserId
+          (b) => b.userId !== currentUserId,
         );
 
         setBlocks(myBlocks);
@@ -417,7 +412,7 @@ export default function UnifiedGroupCalendar({
     e: React.MouseEvent,
     blockId: string,
     edge: "top" | "bottom",
-    day: string
+    day: string,
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -536,7 +531,7 @@ export default function UnifiedGroupCalendar({
   const getVisibleBlocks = () => {
     const myVisibleBlocks = visibleMembers.has(currentUserId) ? blocks : [];
     const otherVisibleBlocks = allMemberBlocks.filter((b) =>
-      visibleMembers.has(b.userId)
+      visibleMembers.has(b.userId),
     );
     return [...myVisibleBlocks, ...otherVisibleBlocks];
   };
@@ -570,7 +565,7 @@ export default function UnifiedGroupCalendar({
           block.day === day &&
           block.status === "available" &&
           hour >= block.startHour &&
-          hour < block.endHour
+          hour < block.endHour,
       );
       return availableAtThisHour.length >= 2;
     }
@@ -581,7 +576,7 @@ export default function UnifiedGroupCalendar({
           block.day === day &&
           block.status === "busy" &&
           hour >= block.startHour &&
-          hour < block.endHour
+          hour < block.endHour,
       );
       return busyAtThisHour.length >= 2;
     }
@@ -658,7 +653,7 @@ export default function UnifiedGroupCalendar({
   const hasMyBlock = (day: string, hour: number) => {
     return blocks.some(
       (block) =>
-        block.day === day && hour >= block.startHour && hour < block.endHour
+        block.day === day && hour >= block.startHour && hour < block.endHour,
     );
   };
 
@@ -700,7 +695,7 @@ export default function UnifiedGroupCalendar({
 
     const existingBlock = blocks.find(
       (block) =>
-        block.day === day && hour >= block.startHour && hour < block.endHour
+        block.day === day && hour >= block.startHour && hour < block.endHour,
     );
 
     if (existingBlock) {
@@ -770,7 +765,7 @@ export default function UnifiedGroupCalendar({
           if (block.day !== dragStartCell.day) return true;
 
           return !(block.startHour < maxHour + 1 && block.endHour > minHour);
-        })
+        }),
       );
     }
 
@@ -780,17 +775,20 @@ export default function UnifiedGroupCalendar({
   };
 
   const mergeOverlappingBlocks = (
-    blocks: AvailabilityBlock[]
+    blocks: AvailabilityBlock[],
   ): AvailabilityBlock[] => {
     if (blocks.length === 0) return [];
     const merged: AvailabilityBlock[] = [];
 
-    const groupedByDay = blocks.reduce((acc, block) => {
-      const key = `${block.day}-${block.status}`;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(block);
-      return acc;
-    }, {} as Record<string, AvailabilityBlock[]>);
+    const groupedByDay = blocks.reduce(
+      (acc, block) => {
+        const key = `${block.day}-${block.status}`;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(block);
+        return acc;
+      },
+      {} as Record<string, AvailabilityBlock[]>,
+    );
 
     Object.values(groupedByDay).forEach((dayBlocks) => {
       const sorted = [...dayBlocks].sort((a, b) => a.startHour - b.startHour);
@@ -888,7 +886,7 @@ export default function UnifiedGroupCalendar({
                     <button
                       onClick={() =>
                         setBlockType(
-                          blockType === "available" ? "busy" : "available"
+                          blockType === "available" ? "busy" : "available",
                         )
                       }
                       className={`px-3 py-1 rounded text-sm font-medium transition ${
@@ -975,6 +973,26 @@ export default function UnifiedGroupCalendar({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
                   />
                 </div>
+
+                {error && (
+                  <div className="mt-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="font-bold">Attention:</span>
+                      <span>{error}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="col-span-full flex gap-2">
                   <button
@@ -1184,24 +1202,24 @@ export default function UnifiedGroupCalendar({
 
                                 displayStart = Math.max(
                                   block.startHour,
-                                  activeSuggestion.start
+                                  activeSuggestion.start,
                                 );
                                 displayEnd = Math.min(
                                   block.endHour,
-                                  activeSuggestion.end
+                                  activeSuggestion.end,
                                 );
                               } else if (
                                 showOnlyOverlapFree ||
                                 showOnlyOverlapBusy
                               ) {
                                 const otherMemberIds = Array.from(
-                                  visibleMembers
+                                  visibleMembers,
                                 ).filter((id) => id !== block.userId);
                                 const otherBlocks = getVisibleBlocks().filter(
                                   (b) =>
                                     b.day === day &&
                                     b.status === block.status &&
-                                    b.userId !== block.userId
+                                    b.userId !== block.userId,
                                 );
 
                                 for (const memberId of otherMemberIds) {
@@ -1209,16 +1227,16 @@ export default function UnifiedGroupCalendar({
                                     (b) =>
                                       b.userId === memberId &&
                                       b.startHour < displayEnd &&
-                                      b.endHour > displayStart
+                                      b.endHour > displayStart,
                                   );
                                   if (!memberOverlap) return null;
                                   displayStart = Math.max(
                                     displayStart,
-                                    memberOverlap.startHour
+                                    memberOverlap.startHour,
                                   );
                                   displayEnd = Math.min(
                                     displayEnd,
-                                    memberOverlap.endHour
+                                    memberOverlap.endHour,
                                   );
                                 }
                               }
@@ -1231,7 +1249,7 @@ export default function UnifiedGroupCalendar({
                               const mergedBorders = Math.max(
                                 0,
                                 Math.floor(displayEnd - 0.01) -
-                                  Math.floor(displayStart)
+                                  Math.floor(displayStart),
                               );
 
                               const blockHeight =
@@ -1266,7 +1284,7 @@ export default function UnifiedGroupCalendar({
                                     const names = getOverlappingNames(
                                       day,
                                       hour,
-                                      block.status
+                                      block.status,
                                     );
                                     setTooltip({
                                       show: true,
@@ -1296,8 +1314,8 @@ export default function UnifiedGroupCalendar({
                                       ) {
                                         setBlocks(
                                           blocks.filter(
-                                            (b) => b.id !== block.id
-                                          )
+                                            (b) => b.id !== block.id,
+                                          ),
                                         );
                                       }
                                     }}
@@ -1313,15 +1331,15 @@ export default function UnifiedGroupCalendar({
                                       {activeSuggestion
                                         ? "Recommended Slot"
                                         : showOnlyOverlapFree ||
-                                          showOnlyOverlapBusy
-                                        ? `${
-                                            block.status === "available"
-                                              ? "Everyone Free"
-                                              : "Everyone Busy"
-                                          } (${visibleMembers.size})`
-                                        : getMemberName(block.userId).split(
-                                            " "
-                                          )[0]}
+                                            showOnlyOverlapBusy
+                                          ? `${
+                                              block.status === "available"
+                                                ? "Everyone Free"
+                                                : "Everyone Busy"
+                                            } (${visibleMembers.size})`
+                                          : getMemberName(block.userId).split(
+                                              " ",
+                                            )[0]}
                                     </span>
                                   </div>
 
@@ -1340,7 +1358,7 @@ export default function UnifiedGroupCalendar({
                                               e,
                                               block.id,
                                               "top",
-                                              block.day
+                                              block.day,
                                             )
                                           }
                                         />
@@ -1351,7 +1369,7 @@ export default function UnifiedGroupCalendar({
                                               e,
                                               block.id,
                                               "bottom",
-                                              block.day
+                                              block.day,
                                             )
                                           }
                                         />
