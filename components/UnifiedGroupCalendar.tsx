@@ -366,9 +366,9 @@ export default function UnifiedGroupCalendar({
           let newEndHour = b.endHour;
 
           if (resizeEdge === "bottom") {
-            newEndHour = Math.max(hour, b.startHour + 0.25);
+            newEndHour = Math.max(hour, b.startHour + 1.0);
           } else {
-            newStartHour = Math.min(hour, b.endHour - 0.25);
+            newStartHour = Math.min(hour, b.endHour - 1.0);
           }
 
           const hasConflict = prev.some((other) => {
