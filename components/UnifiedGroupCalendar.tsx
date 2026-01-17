@@ -1066,7 +1066,7 @@ export default function UnifiedGroupCalendar({
             </div>
 
             {/* Week Navigation */}
-            <div className="flex items-center gap-4 mt-6 px-72">
+            <div className="flex items-center gap-4 mt-4 justify-center">
               <div className="flex items-center bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden">
                 {/* Previous Week */}
                 <button
@@ -1089,7 +1089,7 @@ export default function UnifiedGroupCalendar({
                   </svg>
                 </button>
 
-                {/* This Week */}
+                {/* Current View Label */}
                 <button
                   onClick={() => setWeekOffset(0)}
                   className={`px-4 py-2 text-sm font-semibold transition-colors ${
@@ -1098,7 +1098,11 @@ export default function UnifiedGroupCalendar({
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  Today
+                  {weekOffset === 0
+                    ? "Today"
+                    : weekOffset > 0
+                      ? `${weekOffset} week${weekOffset > 1 ? "s" : ""} in the Future`
+                      : `${Math.abs(weekOffset)} week${weekOffset < -1 ? "s" : ""} in the Past`}
                 </button>
 
                 {/* Next Week */}
@@ -1122,14 +1126,6 @@ export default function UnifiedGroupCalendar({
                   </svg>
                 </button>
               </div>
-
-              {weekOffset !== 0 && (
-                <span className="text-sm font-medium text-gray-500 animate-pulse">
-                  {weekOffset > 0
-                    ? `+${weekOffset} weeks`
-                    : `${weekOffset} weeks`}
-                </span>
-              )}
             </div>
 
             {visibleMembers.size > 1 && (
