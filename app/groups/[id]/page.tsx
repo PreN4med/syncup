@@ -57,7 +57,7 @@ export default async function GroupPage({
         name,
         email
       )
-    `
+    `,
     )
     .eq("group_id", id);
 

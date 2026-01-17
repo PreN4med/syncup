@@ -51,6 +51,37 @@ export default function UnifiedGroupCalendar({
   const supabase = createClient();
   const calendarRef = useRef<HTMLDivElement>(null);
 
+  // Week navigation state
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const getWeekDates = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay + weekOffset * 7);
+
+    // Generate array of dates for the week
+    return days.map((_, index) => {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + index);
+      return date;
+    });
+  };
+
+  const weekDates = getWeekDates();
+
+  const formatDate = (date: Date) => {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
   // State
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [allMemberBlocks, setAllMemberBlocks] = useState<AvailabilityBlock[]>(
@@ -1034,6 +1065,73 @@ export default function UnifiedGroupCalendar({
               ))}
             </div>
 
+            {/* Week Navigation */}
+            <div className="flex items-center gap-4 mt-6 px-72">
+              <div className="flex items-center bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden">
+                {/* Previous Week */}
+                <button
+                  onClick={() => setWeekOffset(weekOffset - 1)}
+                  className="p-2.5 hover:bg-gray-50 text-gray-600 transition-colors border-r border-gray-300"
+                  title="Previous week"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+
+                {/* This Week */}
+                <button
+                  onClick={() => setWeekOffset(0)}
+                  className={`px-4 py-2 text-sm font-semibold transition-colors ${
+                    weekOffset === 0
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Today
+                </button>
+
+                {/* Next Week */}
+                <button
+                  onClick={() => setWeekOffset(weekOffset + 1)}
+                  className="p-2.5 hover:bg-gray-50 text-gray-600 transition-colors border-l border-gray-300"
+                  title="Next week"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {weekOffset !== 0 && (
+                <span className="text-sm font-medium text-gray-500 animate-pulse">
+                  {weekOffset > 0
+                    ? `+${weekOffset} weeks`
+                    : `${weekOffset} weeks`}
+                </span>
+              )}
+            </div>
+
             {visibleMembers.size > 1 && (
               <div className="border-t border-blue-200 pt-3">
                 <span className="text-sm font-medium text-gray-700 mr-2">
@@ -1104,14 +1202,26 @@ export default function UnifiedGroupCalendar({
             <div className="min-w-[800px] select-none">
               <div className="grid grid-cols-8 border-b border-gray-400">
                 <div className="bg-gray-50 p-2 border-r border-gray-400"></div>
-                {days.map((day) => (
-                  <div
-                    key={day}
-                    className="bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-400 last:border-r-0"
-                  >
-                    {day.slice(0, 3)}
-                  </div>
-                ))}
+                {days.map((day, index) => {
+                  const date = weekDates[index];
+                  const todayClass = isToday(date)
+                    ? "bg-blue-100 border-2 border-blue-500"
+                    : "";
+
+                  return (
+                    <div
+                      key={day}
+                      className={`bg-gray-50 p-2 text-center font-semibold text-gray-700 border-r border-gray-400 last:border-r-0 ${todayClass}`}
+                    >
+                      <div>{day.slice(0, 3)}</div>
+                      <div
+                        className={`text-xs font-normal ${isToday(date) ? "text-blue-600 font-bold" : "text-gray-500"}`}
+                      >
+                        {formatDate(date)}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="relative" ref={calendarRef}>
