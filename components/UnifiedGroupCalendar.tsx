@@ -82,6 +82,10 @@ export default function UnifiedGroupCalendar({
     return date.toDateString() === today.toDateString();
   };
 
+  const isPastWeek = () => {
+    return weekOffset < 0;
+  };
+
   // State
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [allMemberBlocks, setAllMemberBlocks] = useState<AvailabilityBlock[]>(
@@ -698,6 +702,7 @@ export default function UnifiedGroupCalendar({
 
   const handleMouseDown = (e: React.MouseEvent, day: string, hour: number) => {
     if (isResizing) return;
+    if (isPastWeek()) return;
     if (!visibleMembers.has(currentUserId) || visibleMembers.size > 1) return;
 
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -905,13 +910,16 @@ export default function UnifiedGroupCalendar({
             <div className="flex items-center gap-4">
               <p className="text-sm text-blue-800">
                 <strong>Tip:</strong>{" "}
-                {visibleMembers.size > 1
-                  ? "Toggle off other members to edit your schedule"
-                  : "Click and drag to edit. Hover over edges to resize."}
+                {isPastWeek()
+                  ? "Viewing past week - schedules are read-only"
+                  : visibleMembers.size > 1
+                    ? "Toggle off other members to edit your schedule"
+                    : "Click and drag to edit. Hover over edges to resize."}
               </p>
 
               {visibleMembers.has(currentUserId) &&
-                visibleMembers.size === 1 && (
+                visibleMembers.size === 1 &&
+                !isPastWeek() && (
                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-blue-200">
                     <span className="text-sm text-gray-700">Creating:</span>
                     <button
@@ -935,13 +943,14 @@ export default function UnifiedGroupCalendar({
             <div className="flex gap-2">
               <button
                 onClick={() => setShowTimeInput(!showTimeInput)}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition"
+                disabled={isPastWeek()}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
               >
                 {showTimeInput ? "Hide" : "Add Exact Time"}
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || isPastWeek()}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Schedule"}
@@ -1257,7 +1266,11 @@ export default function UnifiedGroupCalendar({
                       return (
                         <div
                           key={`${day}-${hour}`}
-                          onClick={() => handleCellClick(day, hour)}
+                          onClick={() => {
+                            if (!isPastWeek()) {
+                              handleCellClick(day, hour);
+                            }
+                          }}
                           onMouseDown={(e) => handleMouseDown(e, day, hour)}
                           onMouseEnter={(e) => handleMouseEnter(e, day, hour)}
                           className={`relative h-16 border-r border-gray-400 last:border-r-0 cursor-pointer transition ${
@@ -1377,9 +1390,10 @@ export default function UnifiedGroupCalendar({
                                     !showOnlyOverlapFree &&
                                     !showOnlyOverlapBusy &&
                                     !activeSuggestion &&
-                                    visibleMembers.size === 1
-                                      ? "cursor-pointer hover:opacity-80"
-                                      : "cursor-default opacity-70"
+                                    visibleMembers.size === 1 &&
+                                    isPastWeek()
+                                      ? "cursor-pointer hover:opacity-70"
+                                      : "cursor-default opacity-80"
                                   }`}
                                   style={{
                                     height: `${blockHeight}px`,
@@ -1416,7 +1430,8 @@ export default function UnifiedGroupCalendar({
                                         !showOnlyOverlapFree &&
                                         !showOnlyOverlapBusy &&
                                         !activeSuggestion &&
-                                        visibleMembers.size === 1
+                                        visibleMembers.size === 1 &&
+                                        !isPastWeek()
                                       ) {
                                         setBlocks(
                                           blocks.filter(
@@ -1454,6 +1469,7 @@ export default function UnifiedGroupCalendar({
                                     !showOnlyOverlapBusy &&
                                     !activeSuggestion &&
                                     visibleMembers.size === 1 &&
+                                    !isPastWeek() &&
                                     blockHeight >= 16 && (
                                       <>
                                         {/* Top Resize Handle */}
