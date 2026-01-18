@@ -86,6 +86,15 @@ export default function UnifiedGroupCalendar({
     return weekOffset < 0;
   };
 
+  const getDateForDayInWeek = (dayIndex: number) => {
+    const weekDate = weekDates[dayIndex];
+    return weekDate.toISOString().split("T")[0]; // YYYY-MM-DD format
+  };
+
+  const dateToString = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
   // State
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [allMemberBlocks, setAllMemberBlocks] = useState<AvailabilityBlock[]>(
@@ -343,10 +352,15 @@ export default function UnifiedGroupCalendar({
    */
   useEffect(() => {
     const loadAllAvailability = async () => {
+      const startDate = dateToString(weekDates[0]);
+      const endDate = dateToString(weekDates[6]);
+
       const { data, error } = await supabase
         .from("availability")
         .select("*")
-        .eq("group_id", groupId);
+        .eq("group_id", groupId)
+        .gte("date", startDate)
+        .lte("date", endDate);
 
       if (error) {
         console.error("Error loading availability:", error);
@@ -355,6 +369,9 @@ export default function UnifiedGroupCalendar({
 
       if (data && data.length > 0) {
         const loadedBlocks: AvailabilityBlock[] = data.map((record, index) => {
+          const recordDate = new Date(record.date);
+          const dayOfWeek = recordDate.getDay();
+
           const startHour = parseInt(record.start_time.split(":")[0]);
           const startMinute = parseInt(record.start_time.split(":")[1]);
           const endHour = parseInt(record.end_time.split(":")[0]);
@@ -362,7 +379,7 @@ export default function UnifiedGroupCalendar({
 
           return {
             id: `loaded-${record.id}-${index}`,
-            day: indexToDay(record.day_of_week),
+            day: indexToDay(dayOfWeek),
             startHour: startHour + startMinute / 60,
             endHour: endHour + endMinute / 60,
             status: record.status as "available" | "busy",
@@ -378,11 +395,20 @@ export default function UnifiedGroupCalendar({
         setBlocks(myBlocks);
         setAllMemberBlocks(otherBlocks);
         setNextId(loadedBlocks.length);
+      } else {
+        setBlocks([]);
+        setAllMemberBlocks([]);
       }
     };
 
     loadAllAvailability();
-  }, [groupId, currentUserId]);
+  }, [groupId, currentUserId, weekOffset]);
+
+  useEffect(() => {
+    // Clear blocks when changing weeks, other useEffect() will override if blocks exist in data
+    setBlocks([]);
+    setAllMemberBlocks([]);
+  }, [weekOffset]);
 
   /**
    * Resize blocks
@@ -624,15 +650,24 @@ export default function UnifiedGroupCalendar({
     setSaveMessage("");
 
     try {
+      const startDate = dateToString(weekDates[0]);
+      const endDate = dateToString(weekDates[6]);
+
+      // Delete existing records for this user in this week
       const { error: deleteError } = await supabase
         .from("availability")
         .delete()
         .eq("user_id", currentUserId)
-        .eq("group_id", groupId);
+        .eq("group_id", groupId)
+        .gte("date", startDate)
+        .lte("date", endDate);
 
       if (deleteError) throw deleteError;
 
       const availabilityRecords = blocks.map((block) => {
+        const dayIndex = dayToIndex(block.day);
+        const blockDate = dateToString(weekDates[dayIndex]);
+
         const startHourInt = Math.floor(block.startHour);
         const startMinute = Math.round((block.startHour - startHourInt) * 60);
         const endHourInt = Math.floor(block.endHour);
@@ -641,7 +676,8 @@ export default function UnifiedGroupCalendar({
         return {
           user_id: currentUserId,
           group_id: groupId,
-          day_of_week: dayToIndex(block.day),
+          date: blockDate,
+          day_of_week: dayIndex, // Keep this for backwards compatibility
           start_time: `${startHourInt.toString().padStart(2, "0")}:${startMinute
             .toString()
             .padStart(2, "0")}:00`,
