@@ -86,11 +86,6 @@ export default function UnifiedGroupCalendar({
     return weekOffset < 0;
   };
 
-  const getDateForDayInWeek = (dayIndex: number) => {
-    const weekDate = weekDates[dayIndex];
-    return weekDate.toISOString().split("T")[0]; // YYYY-MM-DD format
-  };
-
   const dateToString = (date: Date) => {
     return date.toISOString().split("T")[0];
   };
@@ -228,25 +223,6 @@ export default function UnifiedGroupCalendar({
       .sort((a, b) => b.count - a.count || b.end - b.start - (a.end - a.start))
       .slice(0, 3);
   }, [blocks, allMemberBlocks, members]);
-
-  /**
-   * Convert 12-hour time to 24-hour decimal format
-   */
-  const convertTo24Hour = (
-    hour: string,
-    minute: string,
-    period: "AM" | "PM",
-  ): number => {
-    let h = parseInt(hour);
-    const m = parseInt(minute);
-
-    if (isNaN(h) || isNaN(m)) return 0;
-
-    if (period === "PM" && h !== 12) h += 12;
-    if (period === "AM" && h === 12) h = 0;
-
-    return h + m / 60;
-  };
 
   /**
    * Helper to get names of members overlapping at a specific hour
