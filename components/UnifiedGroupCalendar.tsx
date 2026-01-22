@@ -51,6 +51,33 @@ export default function UnifiedGroupCalendar({
   const supabase = createClient();
   const calendarRef = useRef<HTMLDivElement>(null);
 
+  const calendarStyles = (
+    <style>{`
+      /* The container grows/shrinks smoothly when hours change */
+      .calendar-container-animate {
+        transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+      }
+
+      /* Blocks slide and stretch smoothly when the scale shifts */
+      .block-animate {
+        transition: 
+          top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), 
+          height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), 
+          opacity 0.2s ease;
+      }
+
+      /* Newly added rows fade in so they don't 'pop' */
+      .row-fade-in {
+        animation: calendarRowFade 0.5s ease-out;
+      }
+
+      @keyframes calendarRowFade {
+        from { opacity: 0; background-color: rgba(59, 130, 246, 0.05); }
+        to { opacity: 1; background-color: transparent; }
+      }
+    `}</style>
+  );
+
   // Week navigation state
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -869,6 +896,7 @@ export default function UnifiedGroupCalendar({
 
   return (
     <div className="flex flex-col lg:flex-row gap-2 p-2 bg-gray-50 min-h-screen">
+      {calendarStyles}
       {/* Sidebar Recommendation */}
       <div className="w-full lg:w-46 space-y-4">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-green-100">
@@ -1241,11 +1269,14 @@ export default function UnifiedGroupCalendar({
                 })}
               </div>
 
-              <div className="relative" ref={calendarRef}>
+              <div
+                className="relative calendar-container-animate"
+                ref={calendarRef}
+              >
                 {hours.map((hour) => (
                   <div
                     key={hour}
-                    className="grid grid-cols-8 border-b border-gray-400 last:border-b-0"
+                    className="grid grid-cols-8 border-b border-gray-400 last:border-b-0 row-fade-in"
                   >
                     <div className="bg-gray-50 border-r border-gray-400 relative h-16 w-full">
                       <span className="absolute -top-2.5 left-3 text-sm text-gray-600 pointer-events-none bg-gray-50 px-1">
@@ -1393,7 +1424,7 @@ export default function UnifiedGroupCalendar({
                               return (
                                 <div
                                   key={`${block.id}-${index}`}
-                                  className={`absolute left-0 right-0 border-2 flex flex-col items-center justify-center z-10 transition group ${
+                                  className={`absolute left-0 right-0 border-2 flex flex-col items-center justify-center z-10 transition group block-animate ${
                                     activeSuggestion
                                       ? "bg-green-600 border-green-800 shadow-lg"
                                       : getUserColor(block.userId, block.status)
