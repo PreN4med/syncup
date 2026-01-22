@@ -1113,14 +1113,14 @@ export default function UnifiedGroupCalendar({
                 {/* Current View Label */}
                 <button
                   onClick={() => setWeekOffset(0)}
-                  className={`px-4 py-2 text-sm font-semibold transition-colors ${
+                  className={`px-4 py-2 text-sm font-semibold transition-colors w-[220px] text-center flex items-center justify-center ${
                     weekOffset === 0
                       ? "bg-blue-50 text-blue-700"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   {weekOffset === 0
-                    ? "Today"
+                    ? "This Week"
                     : weekOffset > 0
                       ? `${weekOffset} week${weekOffset > 1 ? "s" : ""} in the Future`
                       : `${Math.abs(weekOffset)} week${weekOffset < -1 ? "s" : ""} in the Past`}
@@ -1222,7 +1222,7 @@ export default function UnifiedGroupCalendar({
                 {days.map((day, index) => {
                   const date = weekDates[index];
                   const todayClass = isToday(date)
-                    ? "bg-blue-100 border-2 border-blue-500"
+                    ? "bg-blue-50 ring-2 ring-inset ring-orange-500"
                     : "";
 
                   return (
