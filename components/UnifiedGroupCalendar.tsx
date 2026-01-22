@@ -104,7 +104,7 @@ export default function UnifiedGroupCalendar({
 
   const hours = useMemo(() => {
     let min = 8;
-    let max = 22; // 10 PM
+    let max = 19; // 7 PM
 
     const allBlocks = [...blocks, ...allMemberBlocks];
 
