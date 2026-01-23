@@ -84,12 +84,12 @@ export default function JoinGroupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-blue-400 p-8">
       <div className="max-w-2xl mx-auto">
         {/* Back link */}
         <Link
           href="/dashboard"
-          className="text-blue-600 hover:underline mb-4 inline-block"
+          className="text-gray-950 hover:underline mb-4 inline-block"
         >
           ← Back to Dashboard
         </Link>

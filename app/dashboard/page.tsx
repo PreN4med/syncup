@@ -42,7 +42,7 @@ export default async function DashboardPage() {
         invite_code,
         created_at
       )
-    `
+    `,
     )
     .eq("user_id", user.id);
 
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header with logout button */}
-      <header className="bg-white shadow">
+      <header className="bg-gray-300 shadow">
         <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Schedule Matcher</h1>
           <LogoutButton />
@@ -77,8 +77,8 @@ export default async function DashboardPage() {
         </p>
 
         {/* Groups section - will display user's schedule groups */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-gray-400 rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-6 ">
             <h3 className="text-2xl font-semibold">Your Groups</h3>
             <div className="flex gap-3">
               <Link
