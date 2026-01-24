@@ -84,7 +84,7 @@ export default function JoinGroupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-400 p-8">
+    <div className="min-h-screen bg-linear-to-bl from-green-300 to-lime-100 p-8">
       <div className="max-w-2xl mx-auto">
         {/* Back link */}
         <Link

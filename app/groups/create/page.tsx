@@ -89,7 +89,7 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-300 to-sky-100 p-8">
       <div className="max-w-2xl mx-auto">
         {/* Back link */}
         <Link
@@ -155,8 +155,8 @@ export default function CreateGroupPage() {
           {/* Info about invite codes */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              💡 After creating the group, you&apos;ll receive a unique invite
-              code to share with others.
+              After creating the group, you&apos;ll receive a unique invite code
+              to share with others.
             </p>
           </div>
         </div>
