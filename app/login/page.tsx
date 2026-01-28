@@ -29,7 +29,19 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message);
+      const errorMsg = error.message.toLowerCase();
+
+      if (errorMsg.includes("invalid login credentials")) {
+        setError(
+          "No account found with this email, or incorrect password. Please check your credentials or sign up.",
+        );
+      } else if (errorMsg.includes("email not confirmed")) {
+        setError(
+          "Please verify your email before logging in. Check your inbox for the confirmation link.",
+        );
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
       router.push("/dashboard");

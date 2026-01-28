@@ -28,7 +28,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -39,11 +39,35 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      const errorMsg = error.message.toLowerCase();
+
+      if (
+        errorMsg.includes("user already registered") ||
+        errorMsg.includes("already exists")
+      ) {
+        setError(
+          "An account with this email already exists. Please login instead.",
+        );
+      } else if (errorMsg.includes("password")) {
+        setError("Password must be at least 6 characters long.");
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
-      router.push("/dashboard");
-      router.refresh();
+      if (
+        data.user &&
+        data.user.identities &&
+        data.user.identities.length === 0
+      ) {
+        setError(
+          "An account with this email already exists. Please login instead.",
+        );
+        setLoading(false);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
     }
   };
 
