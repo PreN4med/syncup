@@ -57,9 +57,9 @@ export default async function DashboardPage() {
       .filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-orange-300 to-yellow-300 text-gray-900">
+    <div className="min-h-screen bg-violet-200 text-gray-900">
       {/* Header with logout button */}
-      <header className="bg-amber-400 shadow">
+      <header className="bg-indigo-300 shadow">
         <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Schedule Matcher</h1>
           <LogoutButton />
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
         </p>
 
         {/* Groups section - will display user's schedule groups */}
-        <div className="bg-lime-200 rounded-lg shadow p-6">
+        <div className="bg-lime-100 rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6 ">
             <h3 className="text-2xl font-semibold">Your Groups</h3>
             <div className="flex gap-3">
