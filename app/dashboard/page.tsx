@@ -61,7 +61,7 @@ export default async function DashboardPage() {
       {/* Header with logout button */}
       <header className="bg-indigo-300 shadow">
         <div className="max-w-6xl mx-auto px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Schedule Matcher</h1>
+          <h1 className="text-2xl font-bold text-gray-800">SyncUp</h1>
           <LogoutButton />
         </div>
       </header>
