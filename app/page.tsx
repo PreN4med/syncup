@@ -15,10 +15,10 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
       <div className="text-center text-white max-w-3xl">
-        <h1 className="text-6xl font-bold mb-6">Schedule Matcher</h1>
+        <h1 className="text-6xl font-bold mb-6">SyncUp</h1>
         <p className="text-xl mb-8 text-blue-100">
-          Find the perfect time to meet. Compare schedules with your group and
-          discover when everyone&apos;s available.
+          Find the perfect time to meet. Sync up your schedules with your group
+          and discover when everyone&apos;s available.
         </p>
 
         <div className="flex gap-4 justify-center">
