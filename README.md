@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SyncUp
 
-## Getting Started
+A group scheduling application that makes finding meeting times effortless. Compare schedules with your group and discover when everyone's available.
 
-First, run the development server:
+Live Demo: [syncup-alpha.vercel.app](https://syncup-alpha.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Visual Calendar Interface**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Intuitive drag-and-drop scheduling
+- Hour-by-hour availability blocks
+- Resize blocks by dragging edges
+- Click to add/remove time slots
+- Custom time input for exact scheduling
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Group Collaboration**
 
-## Learn More
+- Create and join groups with unique codes
+- View multiple members' schedules simultaneously
+- Color-coded availability per member
+- Toggle individual member schedules on/off
 
-To learn more about Next.js, take a look at the following resources:
+**Smart Meeting Suggestions**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- AI-powered optimal meeting time recommendations
+- Shows when the most members are available
+- Highlights overlapping free time across the group
+- Visual indicators for scheduling conflicts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Real-time Synchronization**
 
-## Deploy on Vercel
+- Live updates across all group members
+- Instant schedule changes
+- Persistent data storage with Supabase
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Responsive Design**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Works seamlessly on desktop, tablet, and mobile
+- Touch-friendly interface
+- Optimized for all screen sizes
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
+- **Hosting:** Vercel
+- **State Management:** React Hooks
